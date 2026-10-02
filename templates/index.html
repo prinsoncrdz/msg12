@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF to Summary Sheet Excel Generator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: #f4f6f9;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333;
+        }
+        .app-header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+            border-bottom: 4px solid #00c6ff;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .upload-card {
+            border: 2px dashed #2a5298;
+            border-radius: 12px;
+            background-color: #ffffff;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .upload-card:hover, .upload-card.dragover {
+            background-color: #eef5ff;
+            border-color: #00c6ff;
+            transform: translateY(-2px);
+        }
+        .upload-icon {
+            font-size: 3rem;
+            color: #2a5298;
+        }
+        .card-custom {
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            margin-bottom: 2rem;
+        }
+        .table-custom th {
+            background-color: #1e3c72;
+            color: white;
+            font-size: 0.85rem;
+            text-align: center;
+            vertical-align: middle;
+        }
+        .table-custom th.internal-col {
+            background-color: #34495e;
+        }
+        .table-custom td {
+            vertical-align: middle;
+        }
+        .btn-client-download {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            font-weight: 600;
+            padding: 0.75rem 1.8rem;
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(17, 153, 142, 0.3);
+            transition: all 0.3s ease;
+        }
+        .btn-client-download:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(17, 153, 142, 0.4);
+            color: white;
+        }
+        .btn-stores-download {
+            background: linear-gradient(135deg, #2c3e50 0%, #4ca1af 100%);
+            color: white;
+            font-weight: 600;
+            padding: 0.75rem 1.8rem;
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(44, 62, 80, 0.3);
+            transition: all 0.3s ease;
+        }
+        .btn-stores-download:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(44, 62, 80, 0.4);
+            color: white;
+        }
+        .logo-preview {
+            max-height: 50px;
+        }
+        .badge-internal {
+            font-size: 0.65rem;
+            background-color: #f39c12;
+            color: white;
+            padding: 2px 5px;
+            border-radius: 4px;
+            margin-top: 3px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-header text-center">
+        <div class="container">
+            <h1 class="fw-bold mb-2"><i class="bi bi-file-earmark-excel-fill text-warning me-2"></i>PDF to Summary Sheet Excel Generator</h1>
+            <p class="lead mb-0">Sales Order PDF Parser &bull; Multi-Heat/Partial Item Splitter &bull; Stores & Client Excel Exports</p>
+        </div>
+    </div>
+
+    <div class="container-fluid px-4 pb-5">
+        
+        <!-- Step 1: Upload PDF -->
+        <div class="card card-custom p-4 text-center upload-card mb-4" id="dropzone">
+            <input type="file" id="pdfFileInput" accept=".pdf" class="d-none">
+            <div class="py-4">
+                <i class="bi bi-cloud-arrow-up upload-icon mb-3 d-block"></i>
+                <h4 class="fw-semibold">Drag & Drop Sales Order PDF Here</h4>
+                <p class="text-muted">or click to browse from your computer</p>
+                <div class="spinner-border text-primary d-none" id="uploadSpinner" role="status">
+                    <span class="visually-hidden">Parsing PDF...</span>
+                </div>
+                <div id="statusMessage" class="fw-semibold mt-2"></div>
+            </div>
+        </div>
+
+        <!-- Step 2: Live Preview & Editor (Hidden initially) -->
+        <div id="editorSection" class="d-none">
+            
+            <div class="card card-custom p-4 mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold text-primary mb-0"><i class="bi bi-info-circle me-2"></i>Header Details</h5>
+                    <img src="/static/msg_logo.png" alt="MSG Logo" class="logo-preview">
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Client Name</label>
+                        <input type="text" id="clientInput" class="form-control" placeholder="Client Name">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">PO Number</label>
+                        <input type="text" id="poInput" class="form-control" placeholder="PO Number">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">MSG Ref</label>
+                        <input type="text" id="msgRefInput" class="form-control" placeholder="MSG Ref">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card card-custom p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h5 class="fw-bold text-primary mb-0 d-inline-block me-3"><i class="bi bi-table me-2"></i>Summary Line Items</h5>
+                        <small class="text-muted"><i class="bi bi-info-circle"></i> Use <strong>Split Item</strong> to separate partial stock/local purchases or multiple heat numbers under the same Client Item SL NO.</small>
+                    </div>
+                    <div>
+                        <button class="btn btn-sm btn-outline-primary" onclick="addRow()"><i class="bi bi-plus-lg me-1"></i>Add Row</button>
+                    </div>
+                </div>
+
+                <div class="table-responsive mb-4">
+                    <table class="table table-bordered table-custom align-middle" id="itemsTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 70px;">SL NO</th>
+                                <th>Description</th>
+                                <th style="width: 100px;">PO Qty</th>
+                                <th style="width: 80px;">UOM</th>
+                                <th style="width: 130px;">Heat Number</th>
+                                <th style="width: 140px;">Certificate Number</th>
+                                <th style="width: 110px;">MAKE</th>
+                                <th style="width: 140px;">Remarks</th>
+                                <th class="internal-col" style="width: 140px;">
+                                    SUPPLIER NAME<br><span class="badge-internal">Stores Only (Hidden from Client)</span>
+                                </th>
+                                <th class="internal-col" style="width: 140px;">
+                                    MACHINING NAMES<br><span class="badge-internal">Stores Only (Hidden from Client)</span>
+                                </th>
+                                <th style="width: 90px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="itemsTableBody">
+                            <!-- Rows added dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="d-flex justify-content-center gap-3 pt-2">
+                    <button class="btn btn-client-download" onclick="downloadExcel(false)">
+                        <i class="bi bi-file-earmark-excel me-2"></i>Download Client Summary Sheet (.xlsx)
+                        <div style="font-size: 0.75rem; font-weight: normal; opacity: 0.9;">Clean 8 Columns (Hides Supplier & Machining)</div>
+                    </button>
+                    
+                    <button class="btn btn-stores-download" onclick="downloadExcel(true)">
+                        <i class="bi bi-shield-lock me-2"></i>Download Internal Stores Sheet (.xlsx)
+                        <div style="font-size: 0.75rem; font-weight: normal; opacity: 0.9;">Full 10 Columns (Includes Supplier & Machining)</div>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('pdfFileInput');
+        const uploadSpinner = document.getElementById('uploadSpinner');
+        const statusMessage = document.getElementById('statusMessage');
+        const editorSection = document.getElementById('editorSection');
+
+        dropzone.addEventListener('click', () => fileInput.click());
+
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzone.classList.add('dragover');
+        });
+
+        dropzone.addEventListener('dragleave', () => {
+            dropzone.classList.remove('dragover');
+        });
+
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                fileInput.files = e.dataTransfer.files;
+                uploadPDF(e.dataTransfer.files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                uploadPDF(fileInput.files[0]);
+            }
+        });
+
+        function uploadPDF(file) {
+            uploadSpinner.classList.remove('d-none');
+            statusMessage.innerText = 'Extracting data from PDF...';
+            statusMessage.className = 'fw-semibold text-primary mt-2';
+
+            const formData = new FormData();
+            formData.append('pdf_file', file);
+
+            fetch('/api/parse', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(res => {
+                uploadSpinner.classList.add('d-none');
+                if (res.success) {
+                    statusMessage.innerText = 'PDF parsed successfully!';
+                    statusMessage.className = 'fw-semibold text-success mt-2';
+                    populateEditor(res.data);
+                } else {
+                    statusMessage.innerText = 'Error parsing PDF: ' + (res.error || 'Unknown error');
+                    statusMessage.className = 'fw-semibold text-danger mt-2';
+                }
+            })
+            .catch(err => {
+                uploadSpinner.classList.add('d-none');
+                statusMessage.innerText = 'Server error: ' + err.message;
+                statusMessage.className = 'fw-semibold text-danger mt-2';
+            });
+        }
+
+        function populateEditor(data) {
+            document.getElementById('clientInput').value = data.client || '';
+            document.getElementById('poInput').value = data.po_number || '';
+            document.getElementById('msgRefInput').value = data.msg_ref || '';
+
+            const tbody = document.getElementById('itemsTableBody');
+            tbody.innerHTML = '';
+
+            const items = data.items || [];
+            if (items.length === 0) {
+                addRow();
+            } else {
+                items.forEach((item, index) => {
+                    addRow(item);
+                });
+            }
+
+            editorSection.classList.remove('d-none');
+            editorSection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function addRow(item = {}) {
+            const tbody = document.getElementById('itemsTableBody');
+            const rowCount = tbody.rows.length + 1;
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="text-center"><input type="text" class="form-control form-control-sm text-center sl-no" value="${item.sl_no || rowCount}"></td>
+                <td><textarea class="form-control form-control-sm desc" rows="2">${item.description || ''}</textarea></td>
+                <td><input type="text" class="form-control form-control-sm text-center qty" value="${item.qty || '1.00'}"></td>
+                <td><input type="text" class="form-control form-control-sm text-center uom" value="${item.uom || ''}"></td>
+                <td><input type="text" class="form-control form-control-sm heat" value="${item.heat_number || ''}"></td>
+                <td><input type="text" class="form-control form-control-sm cert" value="${item.certificate_number || ''}"></td>
+                <td><input type="text" class="form-control form-control-sm make" value="${item.make || ''}"></td>
+                <td><input type="text" class="form-control form-control-sm remarks" value="${item.remarks || ''}"></td>
+                <td><input type="text" class="form-control form-control-sm supplier" value="${item.supplier_name || ''}"></td>
+                <td><input type="text" class="form-control form-control-sm machining" value="${item.machining_names || ''}"></td>
+                <td class="text-center">
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-secondary" title="Split item into partial batch or heat numbers" onclick="splitRow(this)"><i class="bi bi-diagram-2"></i></button>
+                        <button class="btn btn-outline-danger" title="Delete row" onclick="deleteRow(this)"><i class="bi bi-trash"></i></button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        }
+
+        function splitRow(btn) {
+            const currentRow = btn.closest('tr');
+            const slNo = currentRow.querySelector('.sl-no').value;
+            const desc = currentRow.querySelector('.desc').value;
+            const rawQty = currentRow.querySelector('.qty').value.trim();
+            const uom = currentRow.querySelector('.uom').value;
+            const heat = currentRow.querySelector('.heat').value;
+            const cert = currentRow.querySelector('.cert').value;
+            const make = currentRow.querySelector('.make').value;
+            const remarks = currentRow.querySelector('.remarks').value;
+            const supplier = currentRow.querySelector('.supplier').value;
+            const machining = currentRow.querySelector('.machining').value;
+
+            // Extract total qty numerical value
+            let totalQty = 0;
+            let match = rawQty.match(/(\d+)\s*(?:OF|of)\s*(\d+)/i);
+            if (match) {
+                totalQty = parseInt(match[2]);
+            } else {
+                totalQty = parseFloat(rawQty) || 1;
+            }
+
+            const inputVal = prompt(`Split Item #${slNo} (${totalQty} total required).\n\nEnter Qty for 1st batch (e.g., 3 for "3 OF ${totalQty}"):`, Math.ceil(totalQty / 2));
+            if (inputVal === null) return; // Cancelled
+
+            const split1 = parseFloat(inputVal);
+            if (isNaN(split1) || split1 <= 0 || split1 >= totalQty) {
+                // Default split equally or 1 of total
+                alert(`Please enter a valid partial number between 1 and ${totalQty - 1}`);
+                return;
+            }
+
+            const split2 = totalQty - split1;
+
+            // Update 1st batch row
+            currentRow.querySelector('.qty').value = `${split1} OF ${totalQty}`;
+
+            // Create 2nd batch row directly below
+            const newTr = document.createElement('tr');
+            newTr.innerHTML = `
+                <td class="text-center"><input type="text" class="form-control form-control-sm text-center sl-no" value="${slNo}"></td>
+                <td><textarea class="form-control form-control-sm desc" rows="2">${desc}</textarea></td>
+                <td><input type="text" class="form-control form-control-sm text-center qty" value="${split2} OF ${totalQty}"></td>
+                <td><input type="text" class="form-control form-control-sm text-center uom" value="${uom}"></td>
+                <td><input type="text" class="form-control form-control-sm heat" value="" placeholder="Heat #2"></td>
+                <td><input type="text" class="form-control form-control-sm cert" value="${cert}"></td>
+                <td><input type="text" class="form-control form-control-sm make" value="${make}"></td>
+                <td><input type="text" class="form-control form-control-sm remarks" value="${remarks}"></td>
+                <td><input type="text" class="form-control form-control-sm supplier" value="${supplier}"></td>
+                <td><input type="text" class="form-control form-control-sm machining" value="${machining}"></td>
+                <td class="text-center">
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-secondary" title="Split item" onclick="splitRow(this)"><i class="bi bi-diagram-2"></i></button>
+                        <button class="btn btn-outline-danger" title="Delete row" onclick="deleteRow(this)"><i class="bi bi-trash"></i></button>
+                    </div>
+                </td>
+            `;
+            currentRow.parentNode.insertBefore(newTr, currentRow.nextSibling);
+        }
+
+        function deleteRow(btn) {
+            const row = btn.closest('tr');
+            row.remove();
+        }
+
+        function downloadExcel(isInternal = false) {
+            const client = document.getElementById('clientInput').value;
+            const po_number = document.getElementById('poInput').value;
+            const msg_ref = document.getElementById('msgRefInput').value;
+
+            const items = [];
+            const rows = document.querySelectorAll('#itemsTableBody tr');
+
+            rows.forEach((tr) => {
+                items.push({
+                    sl_no: tr.querySelector('.sl-no').value,
+                    description: tr.querySelector('.desc').value,
+                    qty: tr.querySelector('.qty').value,
+                    uom: tr.querySelector('.uom').value,
+                    heat_number: tr.querySelector('.heat').value,
+                    certificate_number: tr.querySelector('.cert').value,
+                    make: tr.querySelector('.make').value,
+                    remarks: tr.querySelector('.remarks').value,
+                    supplier_name: tr.querySelector('.supplier').value,
+                    machining_names: tr.querySelector('.machining').value
+                });
+            });
+
+            const payload = {
+                client: client,
+                po_number: po_number,
+                msg_ref: msg_ref,
+                is_internal: isInternal,
+                items: items
+            };
+
+            fetch('/api/download', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Failed to generate Excel file');
+                return response.blob();
+            })
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                const prefix = isInternal ? 'Internal_Stores_Summary' : 'Client_Summary';
+                a.download = `${prefix}_${msg_ref || 'PO'}.xlsx`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+            })
+            .catch(err => alert('Error downloading Excel file: ' + err.message));
+        }
+    </script>
+
+</body>
+</html>
