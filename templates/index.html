@@ -45,7 +45,7 @@
         .table-custom th {
             background-color: #1e3c72;
             color: white;
-            font-size: 0.85rem;
+            font-size: 0.82rem;
             text-align: center;
             vertical-align: middle;
         }
@@ -59,7 +59,7 @@
             background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
             color: white;
             font-weight: 600;
-            padding: 0.75rem 1.8rem;
+            padding: 0.75rem 1.5rem;
             border: none;
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(17, 153, 142, 0.3);
@@ -74,7 +74,7 @@
             background: linear-gradient(135deg, #2c3e50 0%, #4ca1af 100%);
             color: white;
             font-weight: 600;
-            padding: 0.75rem 1.8rem;
+            padding: 0.75rem 1.5rem;
             border: none;
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(44, 62, 80, 0.3);
@@ -83,6 +83,21 @@
         .btn-stores-download:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 16px rgba(44, 62, 80, 0.4);
+            color: white;
+        }
+        .btn-pdf-download {
+            background: linear-gradient(135deg, #e74c3c 0%, #e67e22 100%);
+            color: white;
+            font-weight: 600;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+            transition: all 0.3s ease;
+        }
+        .btn-pdf-download:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(231, 76, 60, 0.4);
             color: white;
         }
         .logo-preview {
@@ -101,10 +116,13 @@
 </head>
 <body>
 
+    <!-- HTML5 Datalist for Master Supplier Autocomplete -->
+    <datalist id="suppliersList"></datalist>
+
     <div class="app-header text-center">
         <div class="container">
             <h1 class="fw-bold mb-2"><i class="bi bi-file-earmark-excel-fill text-warning me-2"></i>PDF to Summary Sheet Excel Generator</h1>
-            <p class="lead mb-0">Sales Order PDF Parser &bull; Multi-Heat/Partial Item Splitter &bull; Stores & Client Excel Exports</p>
+            <p class="lead mb-0">Sales Order Parser &bull; Master Supplier Database &bull; Per-Supplier PDF Generator</p>
         </div>
     </div>
 
@@ -152,7 +170,7 @@
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <div>
                         <h5 class="fw-bold text-primary mb-0 d-inline-block me-3"><i class="bi bi-table me-2"></i>Summary Line Items</h5>
-                        <small class="text-muted"><i class="bi bi-info-circle"></i> Use <strong>Split Item</strong> to separate partial stock/local purchases or multiple heat numbers under the same Client Item SL NO.</small>
+                        <small class="text-muted"><i class="bi bi-info-circle"></i> Use <strong>Split Item</strong> for partial batches or heat numbers. Supplier names autocomplete from 130+ Master List.</small>
                     </div>
                     <div>
                         <button class="btn btn-sm btn-outline-primary" onclick="addRow()"><i class="bi bi-plus-lg me-1"></i>Add Row</button>
@@ -163,21 +181,24 @@
                     <table class="table table-bordered table-custom align-middle" id="itemsTable">
                         <thead>
                             <tr>
-                                <th style="width: 70px;">SL NO</th>
+                                <th style="width: 65px;">SL NO</th>
                                 <th>Description</th>
-                                <th style="width: 100px;">PO Qty</th>
-                                <th style="width: 80px;">UOM</th>
-                                <th style="width: 130px;">Heat Number</th>
-                                <th style="width: 140px;">Certificate Number</th>
-                                <th style="width: 110px;">MAKE</th>
-                                <th style="width: 140px;">Remarks</th>
+                                <th style="width: 90px;">PO Qty</th>
+                                <th style="width: 75px;">UOM</th>
+                                <th style="width: 115px;">Heat Number</th>
+                                <th style="width: 125px;">Certificate Number</th>
+                                <th style="width: 100px;">MAKE</th>
+                                <th style="width: 125px;">Remarks</th>
                                 <th class="internal-col" style="width: 140px;">
-                                    SUPPLIER NAME<br><span class="badge-internal">Stores Only (Hidden from Client)</span>
+                                    SUPPLIER NAME<br><span class="badge-internal">Stores Only</span>
                                 </th>
-                                <th class="internal-col" style="width: 140px;">
-                                    MACHINING NAMES<br><span class="badge-internal">Stores Only (Hidden from Client)</span>
+                                <th class="internal-col" style="width: 110px;">
+                                    SUPPLIER PO #<br><span class="badge-internal">Stores Only</span>
                                 </th>
-                                <th style="width: 90px;">Actions</th>
+                                <th class="internal-col" style="width: 130px;">
+                                    MACHINING NAMES<br><span class="badge-internal">Stores Only</span>
+                                </th>
+                                <th style="width: 85px;">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="itemsTableBody">
@@ -186,7 +207,7 @@
                     </table>
                 </div>
 
-                <div class="d-flex justify-content-center gap-3 pt-2">
+                <div class="d-flex justify-content-center flex-wrap gap-3 pt-2">
                     <button class="btn btn-client-download" onclick="downloadExcel(false)">
                         <i class="bi bi-file-earmark-excel me-2"></i>Download Client Summary Sheet (.xlsx)
                         <div style="font-size: 0.75rem; font-weight: normal; opacity: 0.9;">Clean 8 Columns (Hides Supplier & Machining)</div>
@@ -194,7 +215,12 @@
                     
                     <button class="btn btn-stores-download" onclick="downloadExcel(true)">
                         <i class="bi bi-shield-lock me-2"></i>Download Internal Stores Sheet (.xlsx)
-                        <div style="font-size: 0.75rem; font-weight: normal; opacity: 0.9;">Full 10 Columns (Includes Supplier & Machining)</div>
+                        <div style="font-size: 0.75rem; font-weight: normal; opacity: 0.9;">11 Columns (Includes Supplier & Supplier PO #)</div>
+                    </button>
+
+                    <button class="btn btn-pdf-download" onclick="exportSupplierPDFs()">
+                        <i class="bi bi-file-earmark-pdf me-2"></i>Export Per-Supplier PDFs (.zip)
+                        <div style="font-size: 0.75rem; font-weight: normal; opacity: 0.9;">Generates Separate PO PDF per Supplier</div>
                     </button>
                 </div>
             </div>
@@ -209,6 +235,17 @@
         const uploadSpinner = document.getElementById('uploadSpinner');
         const statusMessage = document.getElementById('statusMessage');
         const editorSection = document.getElementById('editorSection');
+
+        // Load master suppliers list on startup
+        fetch('/api/suppliers')
+            .then(res => res.json())
+            .then(res => {
+                if (res.success && res.suppliers) {
+                    const datalist = document.getElementById('suppliersList');
+                    datalist.innerHTML = res.suppliers.map(s => `<option value="${s}"></option>`).join('');
+                }
+            })
+            .catch(err => console.error('Failed to load master suppliers:', err));
 
         dropzone.addEventListener('click', () => fileInput.click());
 
@@ -238,7 +275,7 @@
 
         function uploadPDF(file) {
             uploadSpinner.classList.remove('d-none');
-            statusMessage.innerText = 'Extracting data from PDF...';
+            statusMessage.innerText = 'Extracting data & matching suppliers...';
             statusMessage.className = 'fw-semibold text-primary mt-2';
 
             const formData = new FormData();
@@ -252,7 +289,7 @@
             .then(res => {
                 uploadSpinner.classList.add('d-none');
                 if (res.success) {
-                    statusMessage.innerText = 'PDF parsed successfully!';
+                    statusMessage.innerText = 'PDF parsed & suppliers matched successfully!';
                     statusMessage.className = 'fw-semibold text-success mt-2';
                     populateEditor(res.data);
                 } else {
@@ -302,7 +339,8 @@
                 <td><input type="text" class="form-control form-control-sm cert" value="${item.certificate_number || ''}"></td>
                 <td><input type="text" class="form-control form-control-sm make" value="${item.make || ''}"></td>
                 <td><input type="text" class="form-control form-control-sm remarks" value="${item.remarks || ''}"></td>
-                <td><input type="text" class="form-control form-control-sm supplier" value="${item.supplier_name || ''}"></td>
+                <td><input type="text" class="form-control form-control-sm supplier" list="suppliersList" value="${item.supplier_name || ''}" placeholder="Select Supplier"></td>
+                <td><input type="text" class="form-control form-control-sm supplier-po" value="${item.supplier_po || ''}" placeholder="PO #"></td>
                 <td><input type="text" class="form-control form-control-sm machining" value="${item.machining_names || ''}"></td>
                 <td class="text-center">
                     <div class="btn-group btn-group-sm">
@@ -320,14 +358,13 @@
             const desc = currentRow.querySelector('.desc').value;
             const rawQty = currentRow.querySelector('.qty').value.trim();
             const uom = currentRow.querySelector('.uom').value;
-            const heat = currentRow.querySelector('.heat').value;
             const cert = currentRow.querySelector('.cert').value;
             const make = currentRow.querySelector('.make').value;
             const remarks = currentRow.querySelector('.remarks').value;
             const supplier = currentRow.querySelector('.supplier').value;
+            const supplierPo = currentRow.querySelector('.supplier-po').value;
             const machining = currentRow.querySelector('.machining').value;
 
-            // Extract total qty numerical value
             let totalQty = 0;
             let match = rawQty.match(/(\d+)\s*(?:OF|of)\s*(\d+)/i);
             if (match) {
@@ -337,21 +374,18 @@
             }
 
             const inputVal = prompt(`Split Item #${slNo} (${totalQty} total required).\n\nEnter Qty for 1st batch (e.g., 3 for "3 OF ${totalQty}"):`, Math.ceil(totalQty / 2));
-            if (inputVal === null) return; // Cancelled
+            if (inputVal === null) return;
 
             const split1 = parseFloat(inputVal);
             if (isNaN(split1) || split1 <= 0 || split1 >= totalQty) {
-                // Default split equally or 1 of total
                 alert(`Please enter a valid partial number between 1 and ${totalQty - 1}`);
                 return;
             }
 
             const split2 = totalQty - split1;
 
-            // Update 1st batch row
             currentRow.querySelector('.qty').value = `${split1} OF ${totalQty}`;
 
-            // Create 2nd batch row directly below
             const newTr = document.createElement('tr');
             newTr.innerHTML = `
                 <td class="text-center"><input type="text" class="form-control form-control-sm text-center sl-no" value="${slNo}"></td>
@@ -362,7 +396,8 @@
                 <td><input type="text" class="form-control form-control-sm cert" value="${cert}"></td>
                 <td><input type="text" class="form-control form-control-sm make" value="${make}"></td>
                 <td><input type="text" class="form-control form-control-sm remarks" value="${remarks}"></td>
-                <td><input type="text" class="form-control form-control-sm supplier" value="${supplier}"></td>
+                <td><input type="text" class="form-control form-control-sm supplier" list="suppliersList" value="${supplier}"></td>
+                <td><input type="text" class="form-control form-control-sm supplier-po" value="${supplierPo}"></td>
                 <td><input type="text" class="form-control form-control-sm machining" value="${machining}"></td>
                 <td class="text-center">
                     <div class="btn-group btn-group-sm">
@@ -379,7 +414,7 @@
             row.remove();
         }
 
-        function downloadExcel(isInternal = false) {
+        function buildPayload() {
             const client = document.getElementById('clientInput').value;
             const po_number = document.getElementById('poInput').value;
             const msg_ref = document.getElementById('msgRefInput').value;
@@ -398,23 +433,26 @@
                     make: tr.querySelector('.make').value,
                     remarks: tr.querySelector('.remarks').value,
                     supplier_name: tr.querySelector('.supplier').value,
+                    supplier_po: tr.querySelector('.supplier-po').value,
                     machining_names: tr.querySelector('.machining').value
                 });
             });
 
-            const payload = {
+            return {
                 client: client,
                 po_number: po_number,
                 msg_ref: msg_ref,
-                is_internal: isInternal,
                 items: items
             };
+        }
+
+        function downloadExcel(isInternal = false) {
+            const payload = buildPayload();
+            payload.is_internal = isInternal;
 
             fetch('/api/download', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             })
             .then(response => {
@@ -426,13 +464,38 @@
                 const a = document.createElement('a');
                 a.href = url;
                 const prefix = isInternal ? 'Internal_Stores_Summary' : 'Client_Summary';
-                a.download = `${prefix}_${msg_ref || 'PO'}.xlsx`;
+                a.download = `${prefix}_${payload.msg_ref || 'PO'}.xlsx`;
                 document.body.appendChild(a);
                 a.click();
                 a.remove();
                 window.URL.revokeObjectURL(url);
             })
             .catch(err => alert('Error downloading Excel file: ' + err.message));
+        }
+
+        function exportSupplierPDFs() {
+            const payload = buildPayload();
+
+            fetch('/api/export-supplier-pdfs', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Failed to generate Supplier PDFs');
+                return response.blob();
+            })
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Supplier_PO_Package_${payload.msg_ref || 'SO'}.zip`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+            })
+            .catch(err => alert('Error exporting Supplier PDFs: ' + err.message));
         }
     </script>
 

@@ -1,14 +1,28 @@
+import os
+import json
 import re
 import pdfplumber
 from pypdf import PdfReader
+
+def load_master_suppliers():
+    json_path = os.path.join(os.path.dirname(__file__), 'static', 'suppliers.json')
+    if os.path.exists(json_path):
+        try:
+            with open(json_path, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return []
+
+MASTER_SUPPLIERS = load_master_suppliers()
 
 def extract_pdf_data(pdf_path_or_file):
     """
     Extracts header metadata (Client, PO Number, MSG Ref) and line items
     from Sales Order / Purchase Order PDFs.
+    Auto-detects supplier names from master list and machining instructions.
     """
     text = ""
-    # 1. Try pdfplumber first
     try:
         with pdfplumber.open(pdf_path_or_file) as pdf:
             for page in pdf.pages:
@@ -18,7 +32,6 @@ def extract_pdf_data(pdf_path_or_file):
     except Exception as e:
         print(f"pdfplumber error: {e}")
 
-    # Fallback to pypdf if text is short
     if not text.strip():
         try:
             reader = PdfReader(pdf_path_or_file)
@@ -37,21 +50,17 @@ def extract_pdf_data(pdf_path_or_file):
     po_number = ""
     msg_ref = ""
 
-    # MSG Ref: Sales Order# MSG-0926-2127 or MSG Ref: MSG-0926-2127
     so_match = re.search(r"(?:Sales\s*Order\s*#|MSG\s*Ref\s*:?)\s*([A-Z0-9\-_]+)", full_text, re.IGNORECASE)
     if so_match:
         msg_ref = so_match.group(1).strip()
 
-    # PO Number: Ref# : U-PO003447 or PO Number: U-PO003447
     po_match = re.search(r"(?:Ref\s*#\s*:?|PO\s*(?:Number|#)?\s*:?)\s*([A-Z0-9\-_]+)", full_text, re.IGNORECASE)
     if po_match:
         po_number = po_match.group(1).strip()
 
-    # Client Name: Under "Bill To" or "Client :"
     client_match = re.search(r"(?:Bill\s*To|Client\s*:?)\s*\n?([^\n]+)", full_text, re.IGNORECASE)
     if client_match:
         raw_client = client_match.group(1).strip()
-        # Clean suffix if present like "-AED" or common trailing terms
         raw_client = re.sub(r"-AED$", "", raw_client, flags=re.IGNORECASE).strip()
         client = raw_client
 
@@ -120,25 +129,38 @@ def extract_pdf_data(pdf_path_or_file):
                     "make": "",
                     "remarks": "",
                     "supplier_name": "",
+                    "supplier_po": "",
                     "machining_names": ""
                 }
             else:
                 if current_item:
                     if not re.search(r"pcs|Sub\s*Total|Page|\d+\s*of\s*\d+", line, re.IGNORECASE):
-                        current_item["description"] += " " + line
+                        current_item["description"] += "\n" + line
                     elif "pcs" in line.lower() and not current_item["uom"]:
                         current_item["uom"] = "pcs"
 
     if current_item:
         items.append(current_item)
 
-    # Post-process items to auto-detect machining instructions in description or remarks
+    # Post-process items to auto-detect supplier and machining instructions
     machining_keywords = [r"machin", r"sch\.?\s*\d+", r"from\s+S\.", r"schedule"]
+    
     for item in items:
         desc_rem = (item["description"] + " " + item["remarks"]).lower()
+        
+        # 1. Machining keyword check
         if any(re.search(kw, desc_rem, re.IGNORECASE) for kw in machining_keywords):
             if not item["machining_names"]:
                 item["machining_names"] = "Machining Required"
+        
+        # 2. Master Supplier Auto-match
+        if not item["supplier_name"]:
+            for supplier in MASTER_SUPPLIERS:
+                # Extract clean core name (e.g. "K.HASHIM", "GERAB", "DELCORTE", "Wilhelm Maass")
+                core_name = re.sub(r"\b(LLC|FZE|FZC|L\.L\.C|PTE|LTD|CO|INC|S\.P\.A|BV)\b", "", supplier, flags=re.IGNORECASE).strip()
+                if len(core_name) > 3 and core_name.lower() in desc_rem:
+                    item["supplier_name"] = supplier
+                    break
 
     return {
         "client": client,
@@ -146,4 +168,3 @@ def extract_pdf_data(pdf_path_or_file):
         "msg_ref": msg_ref,
         "items": items
     }
-

@@ -7,7 +7,7 @@ def generate_summary_excel(data, logo_path=None, output_path=None, is_internal=F
     """
     Generates a Summary Sheet Excel workbook.
     If is_internal=False (Client export): Generates 8 columns (Supplier & Machining names omitted).
-    If is_internal=True (Internal Stores export): Generates 10 columns (includes Supplier & Machining names).
+    If is_internal=True (Internal Stores export): Generates 11 columns (includes Supplier Name, Supplier PO #, & Machining names).
     """
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -31,11 +31,11 @@ def generate_summary_excel(data, logo_path=None, output_path=None, is_internal=F
         headers = [
             "SL NO", "Description", "PO Qty", "UOM",
             "Heat Number", "Certificate Number", "MAKE", "Remarks",
-            "SUPPLIER NAME", "MACHINING NAMES"
+            "SUPPLIER NAME", "SUPPLIER PO #", "MACHINING NAMES"
         ]
-        max_col_letter = 'J'
-        total_cols = 10
-        logo_cell = 'I2'
+        max_col_letter = 'K'
+        total_cols = 11
+        logo_cell = 'J2'
     else:
         # Client export: strictly 8 columns
         headers = [
@@ -81,8 +81,8 @@ def generate_summary_excel(data, logo_path=None, output_path=None, is_internal=F
 
     # Spacer and Logo merged blocks
     if is_internal:
-        ws.merge_cells('F2:H4')
-        ws.merge_cells('I2:J4')
+        ws.merge_cells('F2:I4')
+        ws.merge_cells('J2:K4')
     else:
         ws.merge_cells('F2:G4')
         ws.merge_cells('H2:H4')
@@ -115,7 +115,7 @@ def generate_summary_excel(data, logo_path=None, output_path=None, is_internal=F
         c.fill = header_fill
         c.border = thin_border
         
-        if h_text in ["SL NO", "PO Qty", "UOM", "Heat Number", "Certificate Number", "MAKE", "SUPPLIER NAME", "MACHINING NAMES"]:
+        if h_text in ["SL NO", "PO Qty", "UOM", "Heat Number", "Certificate Number", "MAKE", "SUPPLIER NAME", "SUPPLIER PO #", "MACHINING NAMES"]:
             c.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
         else:
             c.alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
@@ -128,7 +128,6 @@ def generate_summary_excel(data, logo_path=None, output_path=None, is_internal=F
         row_idx = start_row + idx
         ws.row_dimensions[row_idx].height = 26
 
-        # SL NO (Client PO Item No, allows string/int e.g. 1, 1, 2, 3, 3)
         sl_val = item.get("sl_no", idx + 1)
         try:
             sl_val = int(sl_val)
@@ -141,7 +140,6 @@ def generate_summary_excel(data, logo_path=None, output_path=None, is_internal=F
         c_desc = ws.cell(row=row_idx, column=2, value=item.get("description", ""))
         c_desc.alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
 
-        # PO Qty: supports text like "3 OF 5", "2 OF 5", "1 OF 3" or numeric
         raw_qty = item.get("qty", "")
         if isinstance(raw_qty, str) and ("OF" in raw_qty.upper() or "of" in raw_qty):
             val_qty = raw_qty.upper()
@@ -175,7 +173,10 @@ def generate_summary_excel(data, logo_path=None, output_path=None, is_internal=F
             c_supp = ws.cell(row=row_idx, column=9, value=item.get("supplier_name", ""))
             c_supp.alignment = Alignment(horizontal='center', vertical='center')
 
-            c_mach = ws.cell(row=row_idx, column=10, value=item.get("machining_names", ""))
+            c_spo = ws.cell(row=row_idx, column=10, value=item.get("supplier_po", ""))
+            c_spo.alignment = Alignment(horizontal='center', vertical='center')
+
+            c_mach = ws.cell(row=row_idx, column=11, value=item.get("machining_names", ""))
             c_mach.alignment = Alignment(horizontal='center', vertical='center')
 
         for c_i in range(1, total_cols + 1):
@@ -186,7 +187,6 @@ def generate_summary_excel(data, logo_path=None, output_path=None, is_internal=F
     max_data_row = max(start_row + len(items) - 1, start_row)
     ws.auto_filter.ref = f"A5:{max_col_letter}{max_data_row}"
 
-    # 5. Set Column Widths
     column_widths = {
         'A': 10,  # SL NO
         'B': 60,  # Description
@@ -196,8 +196,9 @@ def generate_summary_excel(data, logo_path=None, output_path=None, is_internal=F
         'F': 22,  # Certificate Number
         'G': 16,  # MAKE
         'H': 25,  # Remarks
-        'I': 22,  # SUPPLIER NAME (if internal)
-        'J': 22   # MACHINING NAMES (if internal)
+        'I': 24,  # SUPPLIER NAME
+        'J': 18,  # SUPPLIER PO #
+        'K': 22   # MACHINING NAMES
     }
     for col_letter, width in column_widths.items():
         if col_letter <= max_col_letter:

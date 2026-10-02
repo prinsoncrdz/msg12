@@ -1,15 +1,22 @@
 import os
+import json
 import tempfile
 from flask import Flask, render_template, request, jsonify, send_file
-from pdf_parser import extract_pdf_data
+from pdf_parser import extract_pdf_data, load_master_suppliers
 from excel_generator import generate_summary_excel
+from supplier_pdf_generator import generate_all_supplier_pdfs_zip
 
 app = Flask(__name__)
-app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024  # 32MB upload limit
+app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024
 
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/api/suppliers', methods=['GET'])
+def get_suppliers():
+    suppliers = load_master_suppliers()
+    return jsonify({"success": True, "suppliers": suppliers})
 
 @app.route('/api/parse', methods=['POST'])
 def parse_pdf():
@@ -64,6 +71,27 @@ def download_excel():
             as_attachment=True,
             download_name=filename,
             mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/export-supplier-pdfs', methods=['POST'])
+def export_supplier_pdfs():
+    try:
+        data = request.json
+        if not data:
+            return jsonify({"error": "No JSON payload provided"}), 400
+
+        msg_ref = data.get("msg_ref", "SO").replace(" ", "_")
+        zip_filename = f"Supplier_PO_Package_{msg_ref}.zip"
+        
+        zip_stream = generate_all_supplier_pdfs_zip(data)
+        
+        return send_file(
+            zip_stream,
+            as_attachment=True,
+            download_name=zip_filename,
+            mimetype="application/zip"
         )
     except Exception as e:
         return jsonify({"error": str(e)}), 500
