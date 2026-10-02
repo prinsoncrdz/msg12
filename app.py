@@ -1,12 +1,22 @@
 import os
+import sys
 import json
 import tempfile
 from flask import Flask, render_template, request, jsonify, send_file
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
+
 from pdf_parser import extract_pdf_data, load_master_suppliers
 from excel_generator import generate_summary_excel
 from supplier_pdf_generator import generate_all_supplier_pdfs_zip
 
-app = Flask(__name__)
+app = Flask(
+    __name__,
+    template_folder=os.path.join(BASE_DIR, 'templates'),
+    static_folder=os.path.join(BASE_DIR, 'static')
+)
 app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024
 
 @app.route('/')
@@ -30,7 +40,7 @@ def parse_pdf():
     if not file.filename.lower().endswith('.pdf'):
         return jsonify({"success": False, "error": "Uploaded file must be a PDF"}), 400
 
-    temp_dir = tempfile.mkdtemp()
+    temp_dir = tempfile.gettempdir()
     temp_pdf_path = os.path.join(temp_dir, file.filename)
     file.save(temp_pdf_path)
 
@@ -46,7 +56,6 @@ def parse_pdf():
         if os.path.exists(temp_pdf_path):
             try:
                 os.remove(temp_pdf_path)
-                os.rmdir(temp_dir)
             except Exception:
                 pass
 
