@@ -121,6 +121,7 @@ def extract_pdf_data(pdf_path_or_file):
                 uom = ""
                 description = rest
 
+                client_po_item_no = ""
                 if len(matches) >= 2:
                     rate_idx = matches[-2].start()
                     desc_part = rest[:rate_idx].strip()
@@ -136,6 +137,7 @@ def extract_pdf_data(pdf_path_or_file):
                             
                             desc_sub = sub_tokens[:idx]
                             if desc_sub and re.match(r"^\d{4,5}$", desc_sub[-1]):
+                                client_po_item_no = desc_sub[-1]
                                 desc_sub = desc_sub[:-1]
                             
                             description = " ".join(desc_sub)
@@ -143,6 +145,7 @@ def extract_pdf_data(pdf_path_or_file):
 
                 current_item = {
                     "sl_no": int(sl_no),
+                    "client_po_item_no": client_po_item_no if client_po_item_no else str(sl_no),
                     "description": description.strip(),
                     "qty": qty if qty else "1.00",
                     "uom": uom if uom else "",
@@ -151,8 +154,7 @@ def extract_pdf_data(pdf_path_or_file):
                     "make": "",
                     "remarks": "",
                     "supplier_name": "",
-                    "supplier_po": "",
-                    "machining_names": ""
+                    "supplier_po": ""
                 }
             else:
                 if current_item:
@@ -178,24 +180,16 @@ def extract_pdf_data(pdf_path_or_file):
     if current_item:
         items.append(current_item)
 
-    # Post-process items to auto-detect supplier and machining instructions
-    machining_keywords = [r"machin", r"sch\.?\s*\d+", r"from\s+S\.", r"schedule"]
-    
+    # Post-process items to strip product codes & auto-detect supplier
     for item in items:
         # Strip internal product codes e.g. LBL25300RF, LTO156KA350LF2, LUN256KNPTA105N
         item["description"] = strip_internal_product_code(item["description"])
         
         desc_rem = (item["description"] + " " + item["remarks"]).lower()
         
-        # 1. Machining keyword check
-        if any(re.search(kw, desc_rem, re.IGNORECASE) for kw in machining_keywords):
-            if not item["machining_names"]:
-                item["machining_names"] = "Machining Required"
-        
-        # 2. Master Supplier Auto-match
+        # Master Supplier Auto-match
         if not item["supplier_name"]:
             for supplier in MASTER_SUPPLIERS:
-                # Extract clean core name (e.g. "K.HASHIM", "GERAB", "DELCORTE", "Wilhelm Maass")
                 core_name = re.sub(r"\b(LLC|FZE|FZC|L\.L\.C|PTE|LTD|CO|INC|S\.P\.A|BV)\b", "", supplier, flags=re.IGNORECASE).strip()
                 if len(core_name) > 3 and core_name.lower() in desc_rem:
                     item["supplier_name"] = supplier

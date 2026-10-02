@@ -122,7 +122,7 @@
     <div class="app-header text-center">
         <div class="container">
             <h1 class="fw-bold mb-2"><i class="bi bi-file-earmark-excel-fill text-warning me-2"></i>PDF to Summary Sheet Excel Generator</h1>
-            <p class="lead mb-0">Sales Order Parser &bull; Product Code Stripper &bull; Machining/Local Remarks Filter</p>
+            <p class="lead mb-0">Sales Order Parser &bull; Client PO Item No Extraction &bull; Machining/Local Remarks Filter</p>
         </div>
     </div>
 
@@ -170,7 +170,7 @@
                 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                     <div>
                         <h5 class="fw-bold text-primary mb-0 d-inline-block me-3"><i class="bi bi-table me-2"></i>Summary Line Items (Live Preview)</h5>
-                        <small class="text-muted"><i class="bi bi-info-circle"></i> Preview shows all extracted items. Internal product codes (e.g. LBL25300RF, XEL...) are automatically stripped.</small>
+                        <small class="text-muted"><i class="bi bi-info-circle"></i> Preview shows all extracted items. Description width expanded in Excel output.</small>
                     </div>
                     <div>
                         <button class="btn btn-sm btn-outline-primary" onclick="addRow()"><i class="bi bi-plus-lg me-1"></i>Add Row</button>
@@ -191,18 +191,21 @@
                     <table class="table table-bordered table-custom align-middle" id="itemsTable">
                         <thead>
                             <tr>
-                                <th style="width: 65px;">SL NO</th>
+                                <th style="width: 60px;">SL NO</th>
+                                <th class="internal-col" style="width: 120px;">
+                                    CLIENT PO ITEM NO<br><span class="badge-internal">Stores Only</span>
+                                </th>
                                 <th>Description</th>
                                 <th style="width: 90px;">PO Qty</th>
                                 <th style="width: 75px;">UOM</th>
                                 <th style="width: 120px;">Heat Number</th>
                                 <th style="width: 130px;">Certificate Number</th>
-                                <th style="width: 110px;">MAKE</th>
+                                <th style="width: 100px;">MAKE</th>
                                 <th style="width: 180px;">Remarks</th>
                                 <th class="internal-col" style="width: 150px;">
                                     SUPPLIER NAME<br><span class="badge-internal">Stores Only</span>
                                 </th>
-                                <th class="internal-col" style="width: 120px;">
+                                <th class="internal-col" style="width: 110px;">
                                     SUPPLIER PO #<br><span class="badge-internal">Stores Only</span>
                                 </th>
                                 <th style="width: 85px;">Actions</th>
@@ -222,7 +225,7 @@
                     
                     <button class="btn btn-stores-download" onclick="downloadExcel(true)">
                         <i class="bi bi-shield-lock me-2"></i>Download Internal Stores Sheet (.xlsx)
-                        <div style="font-size: 0.75rem; font-weight: normal; opacity: 0.9;">10 Columns (Includes Supplier & Supplier PO #)</div>
+                        <div style="font-size: 0.75rem; font-weight: normal; opacity: 0.9;">11 Columns (Includes Client PO Item No & Supplier Details)</div>
                     </button>
 
                     <button class="btn btn-pdf-download" onclick="exportSupplierPDFs()">
@@ -281,7 +284,7 @@
 
         function uploadPDF(file) {
             uploadSpinner.classList.remove('d-none');
-            statusMessage.innerText = 'Extracting data & stripping product codes...';
+            statusMessage.innerText = 'Extracting data & Client PO Item Numbers...';
             statusMessage.className = 'fw-semibold text-primary mt-2';
 
             const formData = new FormData();
@@ -295,7 +298,7 @@
             .then(res => {
                 uploadSpinner.classList.add('d-none');
                 if (res.success) {
-                    statusMessage.innerText = 'PDF parsed successfully! Product codes stripped.';
+                    statusMessage.innerText = 'PDF parsed successfully!';
                     statusMessage.className = 'fw-semibold text-success mt-2';
                     populateEditor(res.data);
                 } else {
@@ -338,6 +341,7 @@
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td class="text-center"><input type="text" class="form-control form-control-sm text-center sl-no" value="${item.sl_no || rowCount}"></td>
+                <td><input type="text" class="form-control form-control-sm text-center client-po-item" value="${item.client_po_item_no || item.sl_no || rowCount}"></td>
                 <td><textarea class="form-control form-control-sm desc" rows="2">${item.description || ''}</textarea></td>
                 <td><input type="text" class="form-control form-control-sm text-center qty" value="${item.qty || '1.00'}"></td>
                 <td><input type="text" class="form-control form-control-sm text-center uom" value="${item.uom || ''}"></td>
@@ -360,6 +364,7 @@
         function splitRow(btn) {
             const currentRow = btn.closest('tr');
             const slNo = currentRow.querySelector('.sl-no').value;
+            const clientPoItemNo = currentRow.querySelector('.client-po-item').value;
             const desc = currentRow.querySelector('.desc').value;
             const rawQty = currentRow.querySelector('.qty').value.trim();
             const uom = currentRow.querySelector('.uom').value;
@@ -393,6 +398,7 @@
             const newTr = document.createElement('tr');
             newTr.innerHTML = `
                 <td class="text-center"><input type="text" class="form-control form-control-sm text-center sl-no" value="${slNo}"></td>
+                <td><input type="text" class="form-control form-control-sm text-center client-po-item" value="${clientPoItemNo}"></td>
                 <td><textarea class="form-control form-control-sm desc" rows="2">${desc}</textarea></td>
                 <td><input type="text" class="form-control form-control-sm text-center qty" value="${split2} OF ${totalQty}"></td>
                 <td><input type="text" class="form-control form-control-sm text-center uom" value="${uom}"></td>
@@ -428,6 +434,7 @@
             rows.forEach((tr) => {
                 items.push({
                     sl_no: tr.querySelector('.sl-no').value,
+                    client_po_item_no: tr.querySelector('.client-po-item').value,
                     description: tr.querySelector('.desc').value,
                     qty: tr.querySelector('.qty').value,
                     uom: tr.querySelector('.uom').value,

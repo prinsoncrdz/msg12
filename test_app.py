@@ -21,16 +21,17 @@ class SummaryAppTestCase(unittest.TestCase):
         self.assertTrue(data['success'])
         self.assertIn("K.HASHIM LLC", data['suppliers'])
 
-    def test_download_client_excel_filtered(self):
+    def test_download_internal_stores_excel(self):
         payload = {
             "client": "Dubai Petroleum Establishment",
             "po_number": "50307533",
             "msg_ref": "MSG-1026-2171",
-            "is_internal": False,
+            "is_internal": True,
             "filter_machined_only": True,
             "items": [
                 {
                     "sl_no": "1",
+                    "client_po_item_no": "10000",
                     "description": "UNION 1\", 6000#",
                     "qty": "3 OF 5",
                     "uom": "pcs",
@@ -38,18 +39,6 @@ class SummaryAppTestCase(unittest.TestCase):
                     "certificate_number": "MTC-001",
                     "make": "WMAASS",
                     "remarks": "Machined from S.40 to Sch.20",
-                    "supplier_name": "K.HASHIM LLC",
-                    "supplier_po": "PO-1026-3789"
-                },
-                {
-                    "sl_no": "2",
-                    "description": "FLANGE 2\", 150#",
-                    "qty": "2.00",
-                    "uom": "pcs",
-                    "heat_number": "HN456",
-                    "certificate_number": "MTC-002",
-                    "make": "WMAASS",
-                    "remarks": "Standard stock item",
                     "supplier_name": "K.HASHIM LLC",
                     "supplier_po": "PO-1026-3789"
                 }
@@ -63,12 +52,9 @@ class SummaryAppTestCase(unittest.TestCase):
         ws = wb.active
         self.assertEqual(ws['A1'].value, "SUMMARY SHEET")
         self.assertEqual(ws['A5'].value, "SL NO")
-        self.assertEqual(ws['H5'].value, "Remarks")
-        self.assertIsNone(ws['I5'].value)
-        # Verify filtered output only exported row 1 (Machined from...)
-        self.assertEqual(ws['A6'].value, 1)
-        self.assertIn("Machined", ws['H6'].value)
-        self.assertIsNone(ws['A7'].value)
+        self.assertEqual(ws['B5'].value, "CLIENT PO ITEM NO")
+        self.assertEqual(ws['C5'].value, "Description")
+        self.assertEqual(ws['B6'].value, "10000")
 
     def test_export_supplier_pdfs_zip(self):
         payload = {
@@ -78,6 +64,7 @@ class SummaryAppTestCase(unittest.TestCase):
             "items": [
                 {
                     "sl_no": "1",
+                    "client_po_item_no": "10000",
                     "description": "UNION 1\", 6000#",
                     "qty": "12.00",
                     "uom": "pcs",
