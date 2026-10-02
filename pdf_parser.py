@@ -32,15 +32,12 @@ def extract_pdf_data(pdf_path_or_file):
     except Exception as e:
         print(f"pdfplumber error: {e}")
 
-    if not text.strip():
+    if not text.strip() and isinstance(pdf_path_or_file, str):
         try:
-            reader = PdfReader(pdf_path_or_file)
-            for page in reader.pages:
-                t = page.extract_text()
-                if t:
-                    text += t + "\n"
-        except Exception as e:
-            print(f"pypdf error: {e}")
+            with open(pdf_path_or_file, 'r', encoding='utf-8', errors='ignore') as f:
+                text = f.read()
+        except Exception:
+            pass
 
     lines = [line.strip() for line in text.splitlines() if line.strip()]
     full_text = "\n".join(lines)
@@ -66,7 +63,7 @@ def extract_pdf_data(pdf_path_or_file):
 
     # --- Line Items Parsing ---
     items = []
-    item_pattern = re.compile(r"^(\d+)\s+(.+)")
+    item_pattern = re.compile(r"^([1-9]\d{0,2})\s+(.+)")
     
     in_items = False
     current_item = None
@@ -134,10 +131,24 @@ def extract_pdf_data(pdf_path_or_file):
                 }
             else:
                 if current_item:
-                    if not re.search(r"pcs|Sub\s*Total|Page|\d+\s*of\s*\d+", line, re.IGNORECASE):
-                        current_item["description"] += "\n" + line
-                    elif "pcs" in line.lower() and not current_item["uom"]:
-                        current_item["uom"] = "pcs"
+                    if not re.search(r"Sub\s*Total|Standard\s*Rate|Total|VAT|Page|\d+\s*of\s*\d+", line, re.IGNORECASE):
+                        # Filter out lines that are purely prices or standalone numbers e.g. "10000 3.00 150.00 450.00"
+                        if re.match(r"^[\d\s.,pcsEAea\/]+$", line) and re.search(r"\d+\.\d{2}", line):
+                            # Contains rate/amount numeric values - extract UOM if missing
+                            uom_m = re.search(r"\b(pcs|ea|set|mtr|nos|pkg)\b", line, re.IGNORECASE)
+                            if uom_m and not current_item["uom"]:
+                                current_item["uom"] = uom_m.group(1).lower()
+                            continue
+
+                        clean_line = line
+                        uom_match = re.search(r"\b(pcs|ea|set|mtr|nos|pkg)\b", clean_line, re.IGNORECASE)
+                        if uom_match:
+                            if not current_item["uom"]:
+                                current_item["uom"] = uom_match.group(1).lower()
+                            clean_line = re.sub(r"\b(pcs|ea|set|mtr|nos|pkg)\b", "", clean_line, flags=re.IGNORECASE).strip()
+                        
+                        if clean_line and not re.match(r"^\d{4,5}$", clean_line):
+                            current_item["description"] += " " + clean_line
 
     if current_item:
         items.append(current_item)
