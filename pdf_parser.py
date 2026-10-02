@@ -36,8 +36,8 @@ def strip_internal_product_code(description):
     if tokens and len(tokens) > 1:
         first_token = tokens[0].strip()
         if first_token.upper() not in COMMON_ITEM_WORDS:
-            # Alphanumeric codes starting with 2+ uppercase letters, length 5-35
-            if re.match(r"^[A-Z]{2,}[A-Z0-9\-_\/]{3,35}$", first_token):
+            # Alphanumeric codes starting with 2+ uppercase letters, length 5-45 (supporting &, -, _, /)
+            if re.match(r"^[A-Z]{2,}[A-Z0-9\-_\/&]{3,45}$", first_token):
                 desc = tokens[1].strip()
     return desc
 
