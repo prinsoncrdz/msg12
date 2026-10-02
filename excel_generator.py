@@ -1,13 +1,25 @@
 import os
+import re
 import openpyxl
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from openpyxl.drawing.image import Image
 
-def generate_summary_excel(data, logo_path=None, output_path=None, is_internal=False):
+MANUFACTURING_KEYWORDS = ["machined", "fabricated", "made from", "modified", "locally"]
+
+def is_meaningful_item(item):
+    """
+    Checks if an item contains meaningful manufacturing/sourcing keywords in remarks or description.
+    Keywords: Machined From, Fabricated From, Made from, Modified from, Locally.
+    """
+    text = (str(item.get("remarks", "")) + " " + str(item.get("description", ""))).lower()
+    return any(re.search(r"\b" + kw, text, re.IGNORECASE) for kw in MANUFACTURING_KEYWORDS)
+
+def generate_summary_excel(data, logo_path=None, output_path=None, is_internal=False, filter_machined_only=True):
     """
     Generates a Summary Sheet Excel workbook.
-    If is_internal=False (Client export): Generates 8 columns (Supplier & Machining names omitted).
-    If is_internal=True (Internal Stores export): Generates 11 columns (includes Supplier Name, Supplier PO #, & Machining names).
+    - If is_internal=False (Client export): 8 columns (SL NO, Description, PO Qty, UOM, Heat Number, Certificate Number, MAKE, Remarks).
+    - If is_internal=True (Stores export): 10 columns (includes SUPPLIER NAME, SUPPLIER PO #).
+    - filter_machined_only=True: Exports only items matching Machined/Fabricated/Made from/Modified/Locally remarks.
     """
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -31,11 +43,11 @@ def generate_summary_excel(data, logo_path=None, output_path=None, is_internal=F
         headers = [
             "SL NO", "Description", "PO Qty", "UOM",
             "Heat Number", "Certificate Number", "MAKE", "Remarks",
-            "SUPPLIER NAME", "SUPPLIER PO #", "MACHINING NAMES"
+            "SUPPLIER NAME", "SUPPLIER PO #"
         ]
-        max_col_letter = 'K'
-        total_cols = 11
-        logo_cell = 'J2'
+        max_col_letter = 'J'
+        total_cols = 10
+        logo_cell = 'I2'
     else:
         # Client export: strictly 8 columns
         headers = [
@@ -45,6 +57,15 @@ def generate_summary_excel(data, logo_path=None, output_path=None, is_internal=F
         max_col_letter = 'H'
         total_cols = 8
         logo_cell = 'H2'
+
+    # Filter items if filter_machined_only is True
+    raw_items = data.get("items", [])
+    if filter_machined_only:
+        filtered_items = [it for it in raw_items if is_meaningful_item(it)]
+        # Fall back to all items if none matched the keyword filter
+        items = filtered_items if len(filtered_items) > 0 else raw_items
+    else:
+        items = raw_items
 
     # 1. Title Row: SUMMARY SHEET
     ws.merge_cells(f'A1:{max_col_letter}1')
@@ -81,8 +102,8 @@ def generate_summary_excel(data, logo_path=None, output_path=None, is_internal=F
 
     # Spacer and Logo merged blocks
     if is_internal:
-        ws.merge_cells('F2:I4')
-        ws.merge_cells('J2:K4')
+        ws.merge_cells('F2:H4')
+        ws.merge_cells('I2:J4')
     else:
         ws.merge_cells('F2:G4')
         ws.merge_cells('H2:H4')
@@ -115,14 +136,13 @@ def generate_summary_excel(data, logo_path=None, output_path=None, is_internal=F
         c.fill = header_fill
         c.border = thin_border
         
-        if h_text in ["SL NO", "PO Qty", "UOM", "Heat Number", "Certificate Number", "MAKE", "SUPPLIER NAME", "SUPPLIER PO #", "MACHINING NAMES"]:
+        if h_text in ["SL NO", "PO Qty", "UOM", "Heat Number", "Certificate Number", "MAKE", "SUPPLIER NAME", "SUPPLIER PO #"]:
             c.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
         else:
             c.alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
 
     # 4. Data Rows (Row 6 onwards)
     start_row = 6
-    items = data.get("items", [])
 
     for idx, item in enumerate(items):
         row_idx = start_row + idx
@@ -176,9 +196,6 @@ def generate_summary_excel(data, logo_path=None, output_path=None, is_internal=F
             c_spo = ws.cell(row=row_idx, column=10, value=item.get("supplier_po", ""))
             c_spo.alignment = Alignment(horizontal='center', vertical='center')
 
-            c_mach = ws.cell(row=row_idx, column=11, value=item.get("machining_names", ""))
-            c_mach.alignment = Alignment(horizontal='center', vertical='center')
-
         for c_i in range(1, total_cols + 1):
             cell = ws.cell(row=row_idx, column=c_i)
             cell.font = data_font
@@ -197,8 +214,7 @@ def generate_summary_excel(data, logo_path=None, output_path=None, is_internal=F
         'G': 16,  # MAKE
         'H': 25,  # Remarks
         'I': 24,  # SUPPLIER NAME
-        'J': 18,  # SUPPLIER PO #
-        'K': 22   # MACHINING NAMES
+        'J': 18   # SUPPLIER PO #
     }
     for col_letter, width in column_widths.items():
         if col_letter <= max_col_letter:

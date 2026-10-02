@@ -45,7 +45,7 @@
         .table-custom th {
             background-color: #1e3c72;
             color: white;
-            font-size: 0.82rem;
+            font-size: 0.85rem;
             text-align: center;
             vertical-align: middle;
         }
@@ -122,7 +122,7 @@
     <div class="app-header text-center">
         <div class="container">
             <h1 class="fw-bold mb-2"><i class="bi bi-file-earmark-excel-fill text-warning me-2"></i>PDF to Summary Sheet Excel Generator</h1>
-            <p class="lead mb-0">Sales Order Parser &bull; Master Supplier Database &bull; Per-Supplier PDF Generator</p>
+            <p class="lead mb-0">Sales Order Parser &bull; Product Code Stripper &bull; Machining/Local Remarks Filter</p>
         </div>
     </div>
 
@@ -167,13 +167,23 @@
             </div>
 
             <div class="card card-custom p-4">
-                <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                     <div>
-                        <h5 class="fw-bold text-primary mb-0 d-inline-block me-3"><i class="bi bi-table me-2"></i>Summary Line Items</h5>
-                        <small class="text-muted"><i class="bi bi-info-circle"></i> Use <strong>Split Item</strong> for partial batches or heat numbers. Supplier names autocomplete from 130+ Master List.</small>
+                        <h5 class="fw-bold text-primary mb-0 d-inline-block me-3"><i class="bi bi-table me-2"></i>Summary Line Items (Live Preview)</h5>
+                        <small class="text-muted"><i class="bi bi-info-circle"></i> Preview shows all extracted items. Internal product codes (e.g. LBL25300RF, XEL...) are automatically stripped.</small>
                     </div>
                     <div>
                         <button class="btn btn-sm btn-outline-primary" onclick="addRow()"><i class="bi bi-plus-lg me-1"></i>Add Row</button>
+                    </div>
+                </div>
+
+                <!-- Export Filter Option -->
+                <div class="alert alert-light border d-flex align-items-center mb-3 py-2">
+                    <div class="form-check form-switch mb-0">
+                        <input class="form-check-input" type="checkbox" id="filterMachinedCheck" checked>
+                        <label class="form-check-label fw-semibold text-dark" for="filterMachinedCheck">
+                            Export ONLY items containing <code>Machined From</code>, <code>Fabricated From</code>, <code>Made from</code>, <code>Modified from</code>, or <code>Locally</code> in remarks/description
+                        </label>
                     </div>
                 </div>
 
@@ -185,18 +195,15 @@
                                 <th>Description</th>
                                 <th style="width: 90px;">PO Qty</th>
                                 <th style="width: 75px;">UOM</th>
-                                <th style="width: 115px;">Heat Number</th>
-                                <th style="width: 125px;">Certificate Number</th>
-                                <th style="width: 100px;">MAKE</th>
-                                <th style="width: 125px;">Remarks</th>
-                                <th class="internal-col" style="width: 140px;">
+                                <th style="width: 120px;">Heat Number</th>
+                                <th style="width: 130px;">Certificate Number</th>
+                                <th style="width: 110px;">MAKE</th>
+                                <th style="width: 180px;">Remarks</th>
+                                <th class="internal-col" style="width: 150px;">
                                     SUPPLIER NAME<br><span class="badge-internal">Stores Only</span>
                                 </th>
-                                <th class="internal-col" style="width: 110px;">
+                                <th class="internal-col" style="width: 120px;">
                                     SUPPLIER PO #<br><span class="badge-internal">Stores Only</span>
-                                </th>
-                                <th class="internal-col" style="width: 130px;">
-                                    MACHINING NAMES<br><span class="badge-internal">Stores Only</span>
                                 </th>
                                 <th style="width: 85px;">Actions</th>
                             </tr>
@@ -210,12 +217,12 @@
                 <div class="d-flex justify-content-center flex-wrap gap-3 pt-2">
                     <button class="btn btn-client-download" onclick="downloadExcel(false)">
                         <i class="bi bi-file-earmark-excel me-2"></i>Download Client Summary Sheet (.xlsx)
-                        <div style="font-size: 0.75rem; font-weight: normal; opacity: 0.9;">Clean 8 Columns (Hides Supplier & Machining)</div>
+                        <div style="font-size: 0.75rem; font-weight: normal; opacity: 0.9;">Clean 8 Columns (Hides Supplier Details)</div>
                     </button>
                     
                     <button class="btn btn-stores-download" onclick="downloadExcel(true)">
                         <i class="bi bi-shield-lock me-2"></i>Download Internal Stores Sheet (.xlsx)
-                        <div style="font-size: 0.75rem; font-weight: normal; opacity: 0.9;">11 Columns (Includes Supplier & Supplier PO #)</div>
+                        <div style="font-size: 0.75rem; font-weight: normal; opacity: 0.9;">10 Columns (Includes Supplier & Supplier PO #)</div>
                     </button>
 
                     <button class="btn btn-pdf-download" onclick="exportSupplierPDFs()">
@@ -236,7 +243,6 @@
         const statusMessage = document.getElementById('statusMessage');
         const editorSection = document.getElementById('editorSection');
 
-        // Load master suppliers list on startup
         fetch('/api/suppliers')
             .then(res => res.json())
             .then(res => {
@@ -275,7 +281,7 @@
 
         function uploadPDF(file) {
             uploadSpinner.classList.remove('d-none');
-            statusMessage.innerText = 'Extracting data & matching suppliers...';
+            statusMessage.innerText = 'Extracting data & stripping product codes...';
             statusMessage.className = 'fw-semibold text-primary mt-2';
 
             const formData = new FormData();
@@ -289,7 +295,7 @@
             .then(res => {
                 uploadSpinner.classList.add('d-none');
                 if (res.success) {
-                    statusMessage.innerText = 'PDF parsed & suppliers matched successfully!';
+                    statusMessage.innerText = 'PDF parsed successfully! Product codes stripped.';
                     statusMessage.className = 'fw-semibold text-success mt-2';
                     populateEditor(res.data);
                 } else {
@@ -341,7 +347,6 @@
                 <td><input type="text" class="form-control form-control-sm remarks" value="${item.remarks || ''}"></td>
                 <td><input type="text" class="form-control form-control-sm supplier" list="suppliersList" value="${item.supplier_name || ''}" placeholder="Select Supplier"></td>
                 <td><input type="text" class="form-control form-control-sm supplier-po" value="${item.supplier_po || ''}" placeholder="PO #"></td>
-                <td><input type="text" class="form-control form-control-sm machining" value="${item.machining_names || ''}"></td>
                 <td class="text-center">
                     <div class="btn-group btn-group-sm">
                         <button class="btn btn-outline-secondary" title="Split item into partial batch or heat numbers" onclick="splitRow(this)"><i class="bi bi-diagram-2"></i></button>
@@ -363,7 +368,6 @@
             const remarks = currentRow.querySelector('.remarks').value;
             const supplier = currentRow.querySelector('.supplier').value;
             const supplierPo = currentRow.querySelector('.supplier-po').value;
-            const machining = currentRow.querySelector('.machining').value;
 
             let totalQty = 0;
             let match = rawQty.match(/(\d+)\s*(?:OF|of)\s*(\d+)/i);
@@ -398,7 +402,6 @@
                 <td><input type="text" class="form-control form-control-sm remarks" value="${remarks}"></td>
                 <td><input type="text" class="form-control form-control-sm supplier" list="suppliersList" value="${supplier}"></td>
                 <td><input type="text" class="form-control form-control-sm supplier-po" value="${supplierPo}"></td>
-                <td><input type="text" class="form-control form-control-sm machining" value="${machining}"></td>
                 <td class="text-center">
                     <div class="btn-group btn-group-sm">
                         <button class="btn btn-outline-secondary" title="Split item" onclick="splitRow(this)"><i class="bi bi-diagram-2"></i></button>
@@ -433,8 +436,7 @@
                     make: tr.querySelector('.make').value,
                     remarks: tr.querySelector('.remarks').value,
                     supplier_name: tr.querySelector('.supplier').value,
-                    supplier_po: tr.querySelector('.supplier-po').value,
-                    machining_names: tr.querySelector('.machining').value
+                    supplier_po: tr.querySelector('.supplier-po').value
                 });
             });
 
@@ -449,6 +451,7 @@
         function downloadExcel(isInternal = false) {
             const payload = buildPayload();
             payload.is_internal = isInternal;
+            payload.filter_machined_only = document.getElementById('filterMachinedCheck').checked;
 
             fetch('/api/download', {
                 method: 'POST',

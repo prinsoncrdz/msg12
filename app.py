@@ -69,11 +69,12 @@ def download_excel():
         msg_ref = data.get("msg_ref", "SUMMARY").replace(" ", "_")
         po_num = data.get("po_number", "").replace(" ", "_")
         is_internal = bool(data.get("is_internal", False))
+        filter_machined_only = bool(data.get("filter_machined_only", True))
         
         prefix = "Internal_Stores_Summary" if is_internal else "Client_Summary"
         filename = f"{prefix}_{msg_ref}_{po_num}.xlsx" if po_num else f"{prefix}_{msg_ref}.xlsx"
         
-        stream = generate_summary_excel(data, is_internal=is_internal)
+        stream = generate_summary_excel(data, is_internal=is_internal, filter_machined_only=filter_machined_only)
         
         return send_file(
             stream,

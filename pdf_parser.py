@@ -16,20 +16,29 @@ def load_master_suppliers():
 
 MASTER_SUPPLIERS = load_master_suppliers()
 
+COMMON_ITEM_WORDS = {
+    "THREADOLET", "SPECTACLE", "UNION", "ELBOW", "FLANGE", "GASKET",
+    "NIPPOLET", "WELDOLET", "SOCKOLET", "VALVE", "REDUCER", "COUPLING",
+    "NIPPLE", "PIPE", "STUD", "BOLT", "NUT", "BLEED", "ORIFICE",
+    "INSULATING", "SWAGELOK", "NEEDLE", "TEE", "CAP", "CROSS", "BUSHING", "PLUG"
+}
+
 def strip_internal_product_code(description):
     """
     Strips internal product codes like LBL25300RF, LTO156KA350LF2, LUN256KNPTA105N,
-    EL90256KNPTA105JD-STOCK from the beginning of item descriptions.
+    XEL90250S40SRWPB, BL151500RF, EL90256KNPTA105JD-STOCK from the beginning of item descriptions.
+    Preserves standard fitting names (THREADOLET, SPECTACLE, UNION, ELBOW, etc.).
     """
     if not description:
         return ""
     desc = description.strip()
     tokens = desc.split(maxsplit=1)
-    if tokens:
-        first_token = tokens[0]
-        # Match alphanumeric codes starting with 2+ uppercase letters and containing digits
-        if re.match(r"^[A-Z]{2,}[A-Z0-9\-_]{4,28}$", first_token) and re.search(r"\d", first_token) and len(tokens) > 1:
-            desc = tokens[1].strip()
+    if tokens and len(tokens) > 1:
+        first_token = tokens[0].strip()
+        if first_token.upper() not in COMMON_ITEM_WORDS:
+            # Alphanumeric codes starting with 2+ uppercase letters, length 5-35
+            if re.match(r"^[A-Z]{2,}[A-Z0-9\-_\/]{3,35}$", first_token):
+                desc = tokens[1].strip()
     return desc
 
 def extract_pdf_data(pdf_path_or_file):
