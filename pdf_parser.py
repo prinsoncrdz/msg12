@@ -16,6 +16,22 @@ def load_master_suppliers():
 
 MASTER_SUPPLIERS = load_master_suppliers()
 
+def strip_internal_product_code(description):
+    """
+    Strips internal product codes like LBL25300RF, LTO156KA350LF2, LUN256KNPTA105N,
+    EL90256KNPTA105JD-STOCK from the beginning of item descriptions.
+    """
+    if not description:
+        return ""
+    desc = description.strip()
+    tokens = desc.split(maxsplit=1)
+    if tokens:
+        first_token = tokens[0]
+        # Match alphanumeric codes starting with 2+ uppercase letters and containing digits
+        if re.match(r"^[A-Z]{2,}[A-Z0-9\-_]{4,28}$", first_token) and re.search(r"\d", first_token) and len(tokens) > 1:
+            desc = tokens[1].strip()
+    return desc
+
 def extract_pdf_data(pdf_path_or_file):
     """
     Extracts header metadata (Client, PO Number, MSG Ref) and line items
@@ -157,6 +173,9 @@ def extract_pdf_data(pdf_path_or_file):
     machining_keywords = [r"machin", r"sch\.?\s*\d+", r"from\s+S\.", r"schedule"]
     
     for item in items:
+        # Strip internal product codes e.g. LBL25300RF, LTO156KA350LF2, LUN256KNPTA105N
+        item["description"] = strip_internal_product_code(item["description"])
+        
         desc_rem = (item["description"] + " " + item["remarks"]).lower()
         
         # 1. Machining keyword check
