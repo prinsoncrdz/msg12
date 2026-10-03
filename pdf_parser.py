@@ -28,6 +28,21 @@ REMARK_PATTERN = re.compile(
     re.IGNORECASE
 )
 
+def strip_leading_item_number(description, sl_no=None):
+    """
+    Strips leading item sequence numbers (e.g. '1 ', '2 ', '1. ', '01 ') from the beginning of descriptions,
+    while preserving actual size measurements like '1"', '1/2"', '2"'.
+    """
+    if not description:
+        return ""
+    desc = description.strip()
+    if sl_no is not None:
+        pattern = rf"^0*{sl_no}\s*[\.\-]?\s+(?![\"\/])"
+        desc = re.sub(pattern, "", desc, flags=re.IGNORECASE).strip()
+    # Also strip generic leading index number if followed by dot/dash
+    desc = re.sub(r"^\d{1,3}\s*[\.\-]\s+(?![\"\/])", "", desc).strip()
+    return desc
+
 def strip_internal_product_code(description):
     """
     Strips internal product codes like LBL25300RF, LTO156KA350LF2, LUN256KNPTA105N,
@@ -199,6 +214,9 @@ def extract_pdf_data(pdf_path_or_file):
 
     # Post-process items to strip product codes & auto-detect supplier
     for item in items:
+        # Strip leading item sequence numbers e.g. "1 ECC. RED..." -> "ECC. RED..."
+        item["description"] = strip_leading_item_number(item["description"], item["sl_no"])
+
         raw_full = item["description"] + " " + item["remarks"]
         
         # Check if code or description contains STOCK
@@ -219,7 +237,10 @@ def extract_pdf_data(pdf_path_or_file):
 
         # Strip internal product codes e.g. LBL25300RF, LTO156KA350LF2, LUN256KNPTA105N
         item["description"] = strip_internal_product_code(item["description"])
-        
+
+        # Strip leading item number again if revealed after code stripping
+        item["description"] = strip_leading_item_number(item["description"], item["sl_no"])
+
         # Master Supplier Auto-match (if supplier_name is not already set)
         if not item["supplier_name"]:
             desc_rem = (item["description"] + " " + item["remarks"]).lower()

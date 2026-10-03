@@ -82,7 +82,7 @@ class SummaryAppTestCase(unittest.TestCase):
         self.assertEqual(response.mimetype, 'application/zip')
 
     def test_stock_supplier_and_offered_remark_parsing(self):
-        from pdf_parser import strip_internal_product_code, REMARK_PATTERN
+        from pdf_parser import strip_internal_product_code, strip_leading_item_number, REMARK_PATTERN
         from excel_generator import is_meaningful_item
 
         # 1. Test code with STOCK
@@ -90,14 +90,19 @@ class SummaryAppTestCase(unittest.TestCase):
         cleaned = strip_internal_product_code(desc)
         self.assertEqual(cleaned, "FLANGE 2\", 150#, BLIND RF")
 
-        # 2. Test Offered remark matching
+        # 2. Test leading item number stripping (e.g. '1 ECC. RED...' -> 'ECC. RED...')
+        self.assertEqual(strip_leading_item_number("1 ECC. RED. 6\" X 3\"", sl_no=1), "ECC. RED. 6\" X 3\"")
+        self.assertEqual(strip_leading_item_number("2 ECC. RED. 8\" X 6\"", sl_no=2), "ECC. RED. 8\" X 6\"")
+        self.assertEqual(strip_leading_item_number("1\" FLANGE 150#", sl_no=1), "1\" FLANGE 150#")
+
+        # 3. Test Offered remark matching
         item_offered = {
             "description": "UNION 1\", 6000#",
             "remarks": "Offered 1/2\" NPT connection"
         }
         self.assertTrue(is_meaningful_item(item_offered))
 
-        # 3. Test remark pattern matching
+        # 4. Test remark pattern matching
         m = REMARK_PATTERN.search("SPECTACLE BLIND 3/4\" - Offered 1/2\" NPT")
         self.assertIsNotNone(m)
         self.assertEqual(m.group(0), "Offered 1/2\" NPT")
