@@ -86,14 +86,16 @@ def generate_single_supplier_pdf(supplier_name, supplier_items, header_data, log
             supplier_po = it.get("supplier_po")
             break
 
-    header_text = f"""<b>SUPPLIER SUMMARY SHEET</b><br/>
-<font size="10" color="#555555">Supplier Purchase Order & Specification Document</font>"""
+    header_text = f"""<b>MSG OILFIELD &bull; SUPPLIER SUMMARY SHEET</b><br/>
+<font size="9" color="#e08030"><b>Material Solutions Grid</b> &bull; Sourcing - Reliable & Systematic</font>"""
     
     header_p = Paragraph(header_text, title_style)
 
     # Logo image
     if not logo_path or not os.path.exists(logo_path):
-        logo_path = os.path.join(os.path.dirname(__file__), 'static', 'msg_logo.png')
+        logo_path = os.path.join(os.path.dirname(__file__), 'static', 'logo.png')
+        if not os.path.exists(logo_path):
+            logo_path = os.path.join(os.path.dirname(__file__), 'static', 'msg_logo.png')
     
     logo_img = ""
     if os.path.exists(logo_path):

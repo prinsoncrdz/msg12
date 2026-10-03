@@ -12,7 +12,7 @@ class SummaryAppTestCase(unittest.TestCase):
     def test_index_route(self):
         response = self.app.get('/')
         self.assertEqual(response.status_code, 200)
-        self.assertIn(b'PDF to Summary Sheet Excel Generator', response.data)
+        self.assertIn(b'MSG Oilfield', response.data)
 
     def test_suppliers_api(self):
         response = self.app.get('/api/suppliers')
@@ -50,7 +50,7 @@ class SummaryAppTestCase(unittest.TestCase):
         excel_bytes = io.BytesIO(response.data)
         wb = openpyxl.load_workbook(excel_bytes)
         ws = wb.active
-        self.assertEqual(ws['A1'].value, "SUMMARY SHEET")
+        self.assertEqual(ws['A1'].value, "MSG OILFIELD - STORES SUMMARY SHEET")
         self.assertEqual(ws['A5'].value, "SL NO")
         self.assertEqual(ws['B5'].value, "CLIENT PO ITEM NO")
         self.assertEqual(ws['C5'].value, "Description")

@@ -70,7 +70,7 @@ def generate_summary_excel(data, logo_path=None, output_path=None, is_internal=F
     # 1. Title Row: SUMMARY SHEET
     ws.merge_cells(f'A1:{max_col_letter}1')
     title_cell = ws['A1']
-    title_cell.value = "SUMMARY SHEET"
+    title_cell.value = "MSG OILFIELD - STORES SUMMARY SHEET" if is_internal else "MSG OILFIELD - SUMMARY SHEET"
     title_cell.font = header_font
     title_cell.alignment = Alignment(horizontal='center', vertical='center')
     ws.row_dimensions[1].height = 30
@@ -114,7 +114,9 @@ def generate_summary_excel(data, logo_path=None, output_path=None, is_internal=F
 
     # Insert Logo
     if not logo_path or not os.path.exists(logo_path):
-        logo_path = os.path.join(os.path.dirname(__file__), 'static', 'msg_logo.png')
+        logo_path = os.path.join(os.path.dirname(__file__), 'static', 'logo.png')
+        if not os.path.exists(logo_path):
+            logo_path = os.path.join(os.path.dirname(__file__), 'static', 'msg_logo.png')
     
     if os.path.exists(logo_path):
         try:

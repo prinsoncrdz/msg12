@@ -3,62 +3,122 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF to Summary Sheet Excel Generator</title>
+    <title>MSG Oilfield — Technical Sourcing & PO Management System</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <style>
+        :root {
+            --msg-dark: #0f172a;
+            --msg-slate: #1e293b;
+            --msg-orange: #f97316;
+            --msg-orange-hover: #ea580c;
+            --msg-gold: #f59e0b;
+            --msg-red: #dc2626;
+            --msg-gray-light: #f8fafc;
+            --msg-border: #e2e8f0;
+        }
+
         body {
-            background-color: #f4f6f9;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: #333;
+            background-color: #f1f5f9;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            color: #1e293b;
         }
+
+        /* Top Brand Utility Bar */
+        .brand-topbar {
+            background-color: #0b1324;
+            color: #94a3b8;
+            font-size: 0.825rem;
+            padding: 6px 0;
+            border-bottom: 1px solid #1e293b;
+        }
+        .brand-topbar span {
+            color: var(--msg-orange);
+            font-weight: 600;
+        }
+
+        /* App Main Header */
         .app-header {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
             color: white;
-            padding: 2rem 0;
+            padding: 1.75rem 0;
             margin-bottom: 2rem;
-            border-bottom: 4px solid #00c6ff;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-bottom: 4px solid var(--msg-orange);
+            box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.4);
         }
+
+        .header-logo-badge {
+            background: #ffffff;
+            padding: 8px 18px;
+            border-radius: 10px;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+            display: inline-block;
+            transition: transform 0.2s ease;
+        }
+        .header-logo-badge:hover {
+            transform: scale(1.02);
+        }
+        .header-logo-badge img {
+            max-height: 52px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .brand-tagline {
+            color: var(--msg-gold);
+            font-size: 0.95rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
         .upload-card {
-            border: 2px dashed #2a5298;
-            border-radius: 12px;
+            border: 2px dashed #cbd5e1;
+            border-radius: 14px;
             background-color: #ffffff;
             transition: all 0.3s ease;
             cursor: pointer;
         }
         .upload-card:hover, .upload-card.dragover {
-            background-color: #eef5ff;
-            border-color: #00c6ff;
+            background-color: #fff7ed;
+            border-color: var(--msg-orange);
             transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(249, 115, 22, 0.15);
         }
         .upload-icon {
-            font-size: 3rem;
-            color: #2a5298;
+            font-size: 3.2rem;
+            color: var(--msg-orange);
         }
+
         .card-custom {
-            border-radius: 12px;
-            border: none;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border-radius: 14px;
+            border: 1px solid var(--msg-border);
+            box-shadow: 0 4px 18px rgba(0,0,0,0.04);
             margin-bottom: 2rem;
+            background: #ffffff;
         }
+
         #itemsTable {
             min-width: 1400px;
         }
+
         .table-custom th {
-            background-color: #1e3c72;
+            background-color: var(--msg-dark);
             color: white;
             font-size: 0.85rem;
             text-align: center;
             vertical-align: middle;
+            border-bottom: 3px solid var(--msg-orange);
         }
         .table-custom th.internal-col {
-            background-color: #34495e;
+            background-color: var(--msg-slate);
+            border-bottom: 3px solid var(--msg-gold);
         }
         .table-custom td {
             vertical-align: middle;
         }
+
         textarea.desc {
             width: 100%;
             min-width: 380px;
@@ -66,79 +126,114 @@
             font-size: 0.88rem;
             border-radius: 6px;
             resize: both;
+            border: 1px solid #cbd5e1;
+            padding: 6px 8px;
         }
-        .btn-preview {
-            background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
+        textarea.desc:focus {
+            border-color: var(--msg-orange);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2);
+        }
+
+        /* Action Buttons */
+        .btn-msg-primary {
+            background: linear-gradient(135deg, var(--msg-orange) 0%, var(--msg-orange-hover) 100%);
             color: white;
             font-weight: 600;
             padding: 0.75rem 1.5rem;
             border: none;
             border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3);
+            box-shadow: 0 4px 14px rgba(249, 115, 22, 0.35);
+            transition: all 0.3s ease;
+        }
+        .btn-msg-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(249, 115, 22, 0.45);
+            color: white;
+        }
+
+        .btn-preview {
+            background: linear-gradient(135deg, #475569 0%, #334155 100%);
+            color: white;
+            font-weight: 600;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(51, 65, 85, 0.3);
             transition: all 0.3s ease;
         }
         .btn-preview:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(108, 92, 231, 0.4);
+            box-shadow: 0 6px 16px rgba(51, 65, 85, 0.4);
             color: white;
         }
+
         .btn-client-download {
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
             color: white;
             font-weight: 600;
             padding: 0.75rem 1.5rem;
             border: none;
             border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(17, 153, 142, 0.3);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
             transition: all 0.3s ease;
         }
         .btn-client-download:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(17, 153, 142, 0.4);
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.45);
             color: white;
         }
+
         .btn-stores-download {
-            background: linear-gradient(135deg, #2c3e50 0%, #4ca1af 100%);
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
             color: white;
             font-weight: 600;
             padding: 0.75rem 1.5rem;
-            border: none;
+            border: 1px solid #334155;
             border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(44, 62, 80, 0.3);
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.35);
             transition: all 0.3s ease;
         }
         .btn-stores-download:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(44, 62, 80, 0.4);
+            box-shadow: 0 6px 16px rgba(15, 23, 42, 0.45);
             color: white;
         }
+
         .btn-pdf-download {
-            background: linear-gradient(135deg, #e74c3c 0%, #e67e22 100%);
+            background: linear-gradient(135deg, #ea580c 0%, #dc2626 100%);
             color: white;
             font-weight: 600;
             padding: 0.75rem 1.5rem;
             border: none;
             border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+            box-shadow: 0 4px 12px rgba(234, 88, 12, 0.35);
             transition: all 0.3s ease;
         }
         .btn-pdf-download:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(231, 76, 60, 0.4);
+            box-shadow: 0 6px 16px rgba(234, 88, 12, 0.45);
             color: white;
         }
+
         .logo-preview {
-            max-height: 50px;
+            max-height: 48px;
+            background: white;
+            padding: 4px 10px;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
+
         .badge-internal {
             font-size: 0.65rem;
-            background-color: #f39c12;
+            background-color: var(--msg-orange);
             color: white;
             padding: 2px 5px;
             border-radius: 4px;
             margin-top: 3px;
             display: inline-block;
         }
+
         /* Excel Sheet Preview Styling */
         .excel-frame {
             border: 2px solid #217346;
@@ -159,16 +254,17 @@
             font-size: 13px;
         }
         .excel-title-cell {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: bold;
             text-align: center;
             height: 40px;
             vertical-align: middle;
+            background-color: #f8fafc;
         }
         .excel-meta-cell {
             font-weight: bold;
-            font-size: 14px;
-            height: 28px;
+            font-size: 13px;
+            height: 26px;
             vertical-align: middle;
         }
         .excel-header-cell {
@@ -177,6 +273,13 @@
             text-align: center;
             font-size: 13px;
         }
+        .footer-branding {
+            border-top: 1px solid #cbd5e1;
+            padding-top: 1.5rem;
+            margin-top: 3rem;
+            color: #64748b;
+            font-size: 0.875rem;
+        }
     </style>
 </head>
 <body>
@@ -184,10 +287,27 @@
     <!-- HTML5 Datalist for Master Supplier Autocomplete -->
     <datalist id="suppliersList"></datalist>
 
-    <div class="app-header text-center">
-        <div class="container">
-            <h1 class="fw-bold mb-2"><i class="bi bi-file-earmark-excel-fill text-warning me-2"></i>PDF to Summary Sheet Excel Generator</h1>
-            <p class="lead mb-0">Sales Order Parser &bull; Wide Description Box &bull; Visual Excel Preview &bull; Remarks Keyword Filter</p>
+    <!-- Top Utility Bar -->
+    <div class="brand-topbar text-center d-none d-md-block">
+        <div class="container d-flex justify-content-between align-items-center">
+            <div><i class="bi bi-shield-check text-warning me-1"></i> MSG OILFIELD TECHNICAL PORTAL</div>
+            <div><span>Material Solutions Grid</span> &bull; Sourcing - Reliable & Systematic</div>
+            <div><i class="bi bi-globe me-1"></i> www.msgoilfield.com</div>
+        </div>
+    </div>
+
+    <!-- Main Header -->
+    <div class="app-header">
+        <div class="container text-center">
+            <div class="d-flex align-items-center justify-content-center flex-wrap gap-3 mb-2">
+                <div class="header-logo-badge">
+                    <img src="{{ url_for('static', filename='logo.png') }}" alt="MSG Oilfield Logo">
+                </div>
+                <div class="text-start">
+                    <h2 class="fw-bold mb-0 text-white" style="letter-spacing: -0.5px;">Sales Order Parser & Summary Sheet Generator</h2>
+                    <p class="brand-tagline mb-0"><i class="bi bi-gear-fill me-1"></i> Technical Sourcing & PO Management System</p>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -198,9 +318,9 @@
             <input type="file" id="pdfFileInput" accept=".pdf" class="d-none">
             <div class="py-4">
                 <i class="bi bi-cloud-arrow-up upload-icon mb-3 d-block"></i>
-                <h4 class="fw-semibold">Drag & Drop Sales Order PDF Here</h4>
-                <p class="text-muted">or click to browse from your computer</p>
-                <div class="spinner-border text-primary d-none" id="uploadSpinner" role="status">
+                <h4 class="fw-semibold text-dark">Drag & Drop Sales Order PDF Here</h4>
+                <p class="text-muted">or click to browse PDF files from your computer</p>
+                <div class="spinner-border text-warning d-none" id="uploadSpinner" role="status">
                     <span class="visually-hidden">Parsing PDF...</span>
                 </div>
                 <div id="statusMessage" class="fw-semibold mt-2"></div>
@@ -212,8 +332,8 @@
             
             <div class="card card-custom p-4 mb-4">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="fw-bold text-primary mb-0"><i class="bi bi-info-circle me-2"></i>Header Details</h5>
-                    <img src="/static/msg_logo.png" alt="MSG Logo" class="logo-preview">
+                    <h5 class="fw-bold text-dark mb-0"><i class="bi bi-info-circle text-warning me-2"></i>Header Details</h5>
+                    <img src="{{ url_for('static', filename='logo.png') }}" alt="MSG Logo" class="logo-preview">
                 </div>
                 <div class="row g-3">
                     <div class="col-md-4">
@@ -234,12 +354,12 @@
             <div class="card card-custom p-4">
                 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                     <div>
-                        <h5 class="fw-bold text-primary mb-0 d-inline-block me-3"><i class="bi bi-table me-2"></i>Summary Line Items (Live Preview)</h5>
-                        <small class="text-muted"><i class="bi bi-info-circle"></i> Description box is fully resizable. Click <strong>Preview Excel Sheet</strong> to view visual layout before downloading.</small>
+                        <h5 class="fw-bold text-dark mb-0 d-inline-block me-3"><i class="bi bi-table text-warning me-2"></i>Summary Line Items (Live Preview)</h5>
+                        <small class="text-muted"><i class="bi bi-info-circle"></i> Description box is fully resizable. Click <strong>Preview Excel Sheet Layout</strong> to view visual table before download.</small>
                     </div>
                     <div class="d-flex gap-2">
                         <button class="btn btn-sm btn-preview" onclick="openExcelPreviewModal()"><i class="bi bi-eye-fill me-1"></i>Preview Excel Sheet</button>
-                        <button class="btn btn-sm btn-outline-primary" onclick="addRow()"><i class="bi bi-plus-lg me-1"></i>Add Row</button>
+                        <button class="btn btn-sm btn-outline-dark" onclick="addRow()"><i class="bi bi-plus-lg me-1"></i>Add Row</button>
                     </div>
                 </div>
 
@@ -308,6 +428,11 @@
 
         </div>
 
+        <div class="footer-branding text-center">
+            <p class="mb-1 fw-semibold text-dark">MSG OILFIELD — Material Solutions Grid</p>
+            <p class="mb-0 text-muted">Sourcing - Reliable & Systematic &bull; Technical & Quality Engineering</p>
+        </div>
+
     </div>
 
     <!-- Excel Visual Preview Modal -->
@@ -329,7 +454,7 @@
                                 <button class="nav-link fw-bold" id="stores-tab" data-bs-toggle="tab" data-bs-target="#stores-preview" type="button" role="tab" onclick="renderPreview(true)">Internal Stores Sheet (11 Cols)</button>
                             </li>
                         </ul>
-                        <span id="previewCountBadge" class="badge bg-primary fs-6">Showing items</span>
+                        <span id="previewCountBadge" class="badge bg-warning text-dark fs-6">Showing items</span>
                     </div>
 
                     <!-- Visual Excel Render Frame -->
@@ -348,22 +473,30 @@
 
     <script>
         const dropzone = document.getElementById('dropzone');
-        const fileInput = document.getElementById('pdfFileInput');
+        const pdfFileInput = document.getElementById('pdfFileInput');
         const uploadSpinner = document.getElementById('uploadSpinner');
         const statusMessage = document.getElementById('statusMessage');
         const editorSection = document.getElementById('editorSection');
+        const itemsTableBody = document.getElementById('itemsTableBody');
 
+        let currentPreviewIsInternal = false;
+
+        // Fetch suppliers for autocomplete
         fetch('/api/suppliers')
             .then(res => res.json())
-            .then(res => {
-                if (res.success && res.suppliers) {
+            .then(data => {
+                if (data.success && data.suppliers) {
                     const datalist = document.getElementById('suppliersList');
-                    datalist.innerHTML = res.suppliers.map(s => `<option value="${s}"></option>`).join('');
+                    data.suppliers.forEach(supp => {
+                        const opt = document.createElement('option');
+                        opt.value = supp;
+                        datalist.appendChild(opt);
+                    });
                 }
             })
-            .catch(err => console.error('Failed to load master suppliers:', err));
+            .catch(err => console.error("Could not load suppliers datalist", err));
 
-        dropzone.addEventListener('click', () => fileInput.click());
+        dropzone.addEventListener('click', () => pdfFileInput.click());
 
         dropzone.addEventListener('dragover', (e) => {
             e.preventDefault();
@@ -378,21 +511,25 @@
             e.preventDefault();
             dropzone.classList.remove('dragover');
             if (e.dataTransfer.files.length > 0) {
-                fileInput.files = e.dataTransfer.files;
-                uploadPDF(e.dataTransfer.files[0]);
+                handleFileUpload(e.dataTransfer.files[0]);
             }
         });
 
-        fileInput.addEventListener('change', () => {
-            if (fileInput.files.length > 0) {
-                uploadPDF(fileInput.files[0]);
+        pdfFileInput.addEventListener('change', () => {
+            if (pdfFileInput.files.length > 0) {
+                handleFileUpload(pdfFileInput.files[0]);
             }
         });
 
-        function uploadPDF(file) {
+        function handleFileUpload(file) {
+            if (!file.name.toLowerCase().endswith?.('.pdf') && !file.name.toLowerCase().endsWith('.pdf')) {
+                alert('Please upload a PDF file.');
+                return;
+            }
+
             uploadSpinner.classList.remove('d-none');
-            statusMessage.innerText = 'Extracting data & Client PO Item Numbers...';
-            statusMessage.className = 'fw-semibold text-primary mt-2';
+            statusMessage.innerText = 'Parsing Sales Order PDF...';
+            statusMessage.className = 'fw-semibold mt-2 text-warning';
 
             const formData = new FormData();
             formData.append('pdf_file', file);
@@ -402,21 +539,23 @@
                 body: formData
             })
             .then(res => res.json())
-            .then(res => {
+            .then(data => {
                 uploadSpinner.classList.add('d-none');
-                if (res.success) {
-                    statusMessage.innerText = 'PDF parsed successfully!';
-                    statusMessage.className = 'fw-semibold text-success mt-2';
-                    populateEditor(res.data);
+                if (data.success) {
+                    statusMessage.innerText = 'PDF Parsed Successfully!';
+                    statusMessage.className = 'fw-semibold mt-2 text-success';
+                    populateEditor(data.data);
+                    editorSection.classList.remove('d-none');
+                    editorSection.scrollIntoView({ behavior: 'smooth' });
                 } else {
-                    statusMessage.innerText = 'Error parsing PDF: ' + (res.error || 'Unknown error');
-                    statusMessage.className = 'fw-semibold text-danger mt-2';
+                    statusMessage.innerText = 'Error: ' + data.error;
+                    statusMessage.className = 'fw-semibold mt-2 text-danger';
                 }
             })
             .catch(err => {
                 uploadSpinner.classList.add('d-none');
-                statusMessage.innerText = 'Server error: ' + err.message;
-                statusMessage.className = 'fw-semibold text-danger mt-2';
+                statusMessage.innerText = 'Upload failed: ' + err.message;
+                statusMessage.className = 'fw-semibold mt-2 text-danger';
             });
         }
 
@@ -425,155 +564,130 @@
             document.getElementById('poInput').value = data.po_number || '';
             document.getElementById('msgRefInput').value = data.msg_ref || '';
 
-            const tbody = document.getElementById('itemsTableBody');
-            tbody.innerHTML = '';
-
+            itemsTableBody.innerHTML = '';
             const items = data.items || [];
-            if (items.length === 0) {
-                addRow();
-            } else {
-                items.forEach((item, index) => {
-                    addRow(item);
-                });
-            }
-
-            editorSection.classList.remove('d-none');
-            editorSection.scrollIntoView({ behavior: 'smooth' });
+            items.forEach((item, index) => {
+                addRow(item, index + 1);
+            });
         }
 
-        function addRow(item = {}) {
-            const tbody = document.getElementById('itemsTableBody');
-            const rowCount = tbody.rows.length + 1;
-
+        function addRow(item = {}, slNo = null) {
+            const rowCount = itemsTableBody.rows.length;
+            const currentSlNo = slNo || (rowCount + 1);
             const tr = document.createElement('tr');
+
             tr.innerHTML = `
-                <td class="text-center"><input type="text" class="form-control form-control-sm text-center sl-no" value="${item.sl_no || rowCount}"></td>
-                <td><input type="text" class="form-control form-control-sm text-center client-po-item" value="${item.client_po_item_no || item.sl_no || rowCount}"></td>
-                <td><textarea class="form-control form-control-sm desc" rows="3">${item.description || ''}</textarea></td>
-                <td><input type="text" class="form-control form-control-sm text-center qty" value="${item.qty || '1.00'}"></td>
-                <td><input type="text" class="form-control form-control-sm text-center uom" value="${item.uom || ''}"></td>
-                <td><input type="text" class="form-control form-control-sm heat" value="${item.heat_number || ''}"></td>
-                <td><input type="text" class="form-control form-control-sm cert" value="${item.certificate_number || ''}"></td>
-                <td><input type="text" class="form-control form-control-sm make" value="${item.make || ''}"></td>
-                <td><input type="text" class="form-control form-control-sm remarks" value="${item.remarks || ''}"></td>
-                <td><input type="text" class="form-control form-control-sm supplier" list="suppliersList" value="${item.supplier_name || ''}" placeholder="Select Supplier"></td>
-                <td><input type="text" class="form-control form-control-sm supplier-po" value="${item.supplier_po || ''}" placeholder="PO #"></td>
+                <td class="text-center fw-semibold row-sl-no">${currentSlNo}</td>
+                <td class="internal-col text-center">
+                    <input type="text" class="form-control form-control-sm text-center item-client-po-item-no" value="${item.client_po_item_no || ''}" placeholder="1.0">
+                </td>
+                <td>
+                    <textarea class="form-control desc item-desc" placeholder="Item Description">${item.description || ''}</textarea>
+                </td>
+                <td>
+                    <input type="text" class="form-control form-control-sm text-center item-qty" value="${item.qty || ''}">
+                </td>
+                <td>
+                    <input type="text" class="form-control form-control-sm text-center item-uom" value="${item.uom || ''}">
+                </td>
+                <td>
+                    <input type="text" class="form-control form-control-sm text-center item-heat" value="${item.heat_number || ''}">
+                </td>
+                <td>
+                    <input type="text" class="form-control form-control-sm text-center item-cert" value="${item.certificate_number || ''}">
+                </td>
+                <td>
+                    <input type="text" class="form-control form-control-sm text-center item-make" value="${item.make || ''}">
+                </td>
+                <td>
+                    <input type="text" class="form-control form-control-sm item-remarks" value="${item.remarks || ''}">
+                </td>
+                <td class="internal-col">
+                    <input type="text" class="form-control form-control-sm item-supplier-name" list="suppliersList" value="${item.supplier_name || ''}" placeholder="Supplier">
+                </td>
+                <td class="internal-col">
+                    <input type="text" class="form-control form-control-sm text-center item-supplier-po" value="${item.supplier_po || ''}" placeholder="PO #">
+                </td>
                 <td class="text-center">
                     <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-secondary" title="Split item into partial batch or heat numbers" onclick="splitRow(this)"><i class="bi bi-diagram-2"></i></button>
-                        <button class="btn btn-outline-danger" title="Delete row" onclick="deleteRow(this)"><i class="bi bi-trash"></i></button>
+                        <button class="btn btn-outline-success" onclick="splitRow(this)" title="Split row for multi-heat"><i class="bi bi-plus-square"></i></button>
+                        <button class="btn btn-outline-danger" onclick="deleteRow(this)" title="Delete Row"><i class="bi bi-trash"></i></button>
                     </div>
                 </td>
             `;
-            tbody.appendChild(tr);
+            itemsTableBody.appendChild(tr);
+            reindexRows();
         }
 
         function splitRow(btn) {
-            const currentRow = btn.closest('tr');
-            const slNo = currentRow.querySelector('.sl-no').value;
-            const clientPoItemNo = currentRow.querySelector('.client-po-item').value;
-            const desc = currentRow.querySelector('.desc').value;
-            const rawQty = currentRow.querySelector('.qty').value.trim();
-            const uom = currentRow.querySelector('.uom').value;
-            const cert = currentRow.querySelector('.cert').value;
-            const make = currentRow.querySelector('.make').value;
-            const remarks = currentRow.querySelector('.remarks').value;
-            const supplier = currentRow.querySelector('.supplier').value;
-            const supplierPo = currentRow.querySelector('.supplier-po').value;
+            const currentTr = btn.closest('tr');
+            const newTr = currentTr.cloneNode(true);
+            
+            newTr.querySelector('.item-qty').value = '';
+            newTr.querySelector('.item-heat').value = '';
+            newTr.querySelector('.item-cert').value = '';
 
-            let totalQty = 0;
-            let match = rawQty.match(/(\d+)\s*(?:OF|of)\s*(\d+)/i);
-            if (match) {
-                totalQty = parseInt(match[2]);
-            } else {
-                totalQty = parseFloat(rawQty) || 1;
-            }
-
-            const inputVal = prompt(`Split Item #${slNo} (${totalQty} total required).\n\nEnter Qty for 1st batch (e.g., 3 for "3 OF ${totalQty}"):`, Math.ceil(totalQty / 2));
-            if (inputVal === null) return;
-
-            const split1 = parseFloat(inputVal);
-            if (isNaN(split1) || split1 <= 0 || split1 >= totalQty) {
-                alert(`Please enter a valid partial number between 1 and ${totalQty - 1}`);
-                return;
-            }
-
-            const split2 = totalQty - split1;
-
-            currentRow.querySelector('.qty').value = `${split1} OF ${totalQty}`;
-
-            const newTr = document.createElement('tr');
-            newTr.innerHTML = `
-                <td class="text-center"><input type="text" class="form-control form-control-sm text-center sl-no" value="${slNo}"></td>
-                <td><input type="text" class="form-control form-control-sm text-center client-po-item" value="${clientPoItemNo}"></td>
-                <td><textarea class="form-control form-control-sm desc" rows="3">${desc}</textarea></td>
-                <td><input type="text" class="form-control form-control-sm text-center qty" value="${split2} OF ${totalQty}"></td>
-                <td><input type="text" class="form-control form-control-sm text-center uom" value="${uom}"></td>
-                <td><input type="text" class="form-control form-control-sm heat" value="" placeholder="Heat #2"></td>
-                <td><input type="text" class="form-control form-control-sm cert" value="${cert}"></td>
-                <td><input type="text" class="form-control form-control-sm make" value="${make}"></td>
-                <td><input type="text" class="form-control form-control-sm remarks" value="${remarks}"></td>
-                <td><input type="text" class="form-control form-control-sm supplier" list="suppliersList" value="${supplier}"></td>
-                <td><input type="text" class="form-control form-control-sm supplier-po" value="${supplierPo}"></td>
-                <td class="text-center">
-                    <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-secondary" title="Split item" onclick="splitRow(this)"><i class="bi bi-diagram-2"></i></button>
-                        <button class="btn btn-outline-danger" title="Delete row" onclick="deleteRow(this)"><i class="bi bi-trash"></i></button>
-                    </div>
-                </td>
-            `;
-            currentRow.parentNode.insertBefore(newTr, currentRow.nextSibling);
+            currentTr.parentNode.insertBefore(newTr, currentTr.nextSibling);
+            reindexRows();
         }
 
         function deleteRow(btn) {
-            const row = btn.closest('tr');
-            row.remove();
+            const tr = btn.closest('tr');
+            if (itemsTableBody.rows.length > 1) {
+                tr.remove();
+                reindexRows();
+            } else {
+                alert('Cannot delete the only row.');
+            }
+        }
+
+        function reindexRows() {
+            const rows = itemsTableBody.querySelectorAll('tr');
+            rows.forEach((row, idx) => {
+                row.querySelector('.row-sl-no').innerText = idx + 1;
+            });
         }
 
         function buildPayload() {
-            const client = document.getElementById('clientInput').value;
-            const po_number = document.getElementById('poInput').value;
-            const msg_ref = document.getElementById('msgRefInput').value;
-
             const items = [];
-            const rows = document.querySelectorAll('#itemsTableBody tr');
+            const rows = itemsTableBody.querySelectorAll('tr');
 
-            rows.forEach((tr) => {
+            rows.forEach((row, idx) => {
                 items.push({
-                    sl_no: tr.querySelector('.sl-no').value,
-                    client_po_item_no: tr.querySelector('.client-po-item').value,
-                    description: tr.querySelector('.desc').value,
-                    qty: tr.querySelector('.qty').value,
-                    uom: tr.querySelector('.uom').value,
-                    heat_number: tr.querySelector('.heat').value,
-                    certificate_number: tr.querySelector('.cert').value,
-                    make: tr.querySelector('.make').value,
-                    remarks: tr.querySelector('.remarks').value,
-                    supplier_name: tr.querySelector('.supplier').value,
-                    supplier_po: tr.querySelector('.supplier-po').value
+                    sl_no: idx + 1,
+                    client_po_item_no: row.querySelector('.item-client-po-item-no')?.value.trim() || '',
+                    description: row.querySelector('.item-desc')?.value.trim() || '',
+                    qty: row.querySelector('.item-qty')?.value.trim() || '',
+                    uom: row.querySelector('.item-uom')?.value.trim() || '',
+                    heat_number: row.querySelector('.item-heat')?.value.trim() || '',
+                    certificate_number: row.querySelector('.item-cert')?.value.trim() || '',
+                    make: row.querySelector('.item-make')?.value.trim() || '',
+                    remarks: row.querySelector('.item-remarks')?.value.trim() || '',
+                    supplier_name: row.querySelector('.item-supplier-name')?.value.trim() || '',
+                    supplier_po: row.querySelector('.item-supplier-po')?.value.trim() || ''
                 });
             });
 
             return {
-                client: client,
-                po_number: po_number,
-                msg_ref: msg_ref,
+                client: document.getElementById('clientInput').value.trim(),
+                po_number: document.getElementById('poInput').value.trim(),
+                msg_ref: document.getElementById('msgRefInput').value.trim(),
+                filter_machined_only: document.getElementById('filterMachinedCheck').checked,
                 items: items
             };
         }
 
-        let currentPreviewIsInternal = false;
+        const MANUFACTURING_KEYWORDS = ["machined", "fabricated", "made from", "modified", "locally"];
+        function isMeaningfulRemark(text) {
+            if (!text) return false;
+            const lower = text.toLowerCase();
+            return MANUFACTURING_KEYWORDS.some(kw => new RegExp('\\b' + kw, 'i').test(lower));
+        }
 
         function openExcelPreviewModal() {
             renderPreview(currentPreviewIsInternal);
-            const modal = new bootstrap.Modal(document.getElementById('excelPreviewModal'));
-            modal.show();
-        }
-
-        function isMeaningfulRemark(text) {
-            const kwList = ["machined", "fabricated", "made from", "modified", "locally"];
-            const t = text.toLowerCase();
-            return kwList.some(kw => t.includes(kw));
+            const previewModal = new bootstrap.Modal(document.getElementById('excelPreviewModal'));
+            previewModal.show();
         }
 
         function renderPreview(isInternal) {
@@ -597,7 +711,7 @@
             let html = `<table class="excel-table">`;
             
             // 1. Title Row
-            html += `<tr><td colspan="${cols}" class="excel-title-cell">SUMMARY SHEET</td></tr>`;
+            html += `<tr><td colspan="${cols}" class="excel-title-cell">${isInternal ? 'MSG OILFIELD - STORES SUMMARY SHEET' : 'MSG OILFIELD - SUMMARY SHEET'}</td></tr>`;
             
             // 2. Metadata Block
             if (isInternal) {
@@ -605,7 +719,7 @@
                 <tr>
                     <td colspan="5" class="excel-meta-cell">Client : ${payload.client || ''}</td>
                     <td colspan="4" rowspan="3" style="background:#f9f9f9; text-align:center; vertical-align:middle; font-weight:bold; color:#888;">[ Spacer Block ]</td>
-                    <td colspan="2" rowspan="3" style="text-align:center; vertical-align:middle;"><img src="/static/msg_logo.png" style="max-height:45px;"></td>
+                    <td colspan="2" rowspan="3" style="text-align:center; vertical-align:middle;"><img src="/static/logo.png" style="max-height:45px;"></td>
                 </tr>
                 <tr><td colspan="5" class="excel-meta-cell">PO Number: ${payload.po_number || ''}</td></tr>
                 <tr><td colspan="5" class="excel-meta-cell">MSG Ref: ${payload.msg_ref || ''}</td></tr>`;
@@ -614,7 +728,7 @@
                 <tr>
                     <td colspan="5" class="excel-meta-cell">Client : ${payload.client || ''}</td>
                     <td colspan="2" rowspan="3" style="background:#f9f9f9; text-align:center; vertical-align:middle; font-weight:bold; color:#888;">[ Spacer ]</td>
-                    <td colspan="1" rowspan="3" style="text-align:center; vertical-align:middle;"><img src="/static/msg_logo.png" style="max-height:45px;"></td>
+                    <td colspan="1" rowspan="3" style="text-align:center; vertical-align:middle;"><img src="/static/logo.png" style="max-height:45px;"></td>
                 </tr>
                 <tr><td colspan="5" class="excel-meta-cell">PO Number: ${payload.po_number || ''}</td></tr>
                 <tr><td colspan="5" class="excel-meta-cell">MSG Ref: ${payload.msg_ref || ''}</td></tr>`;
@@ -666,7 +780,11 @@
         function downloadExcel(isInternal = false) {
             const payload = buildPayload();
             payload.is_internal = isInternal;
-            payload.filter_machined_only = document.getElementById('filterMachinedCheck').checked;
+
+            const prefix = isInternal ? "Internal_Stores_Summary" : "Client_Summary";
+            const poStr = payload.po_number ? "_" + payload.po_number.replace(/\s+/g, '_') : "";
+            const msgStr = payload.msg_ref ? payload.msg_ref.replace(/\s+/g, '_') : "SUMMARY";
+            const filename = `${prefix}_${msgStr}${poStr}.xlsx`;
 
             fetch('/api/download', {
                 method: 'POST',
@@ -674,21 +792,20 @@
                 body: JSON.stringify(payload)
             })
             .then(response => {
-                if (!response.ok) throw new Error('Failed to generate Excel file');
+                if (!response.ok) throw new Error('Failed to generate Excel sheet');
                 return response.blob();
             })
             .then(blob => {
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                const prefix = isInternal ? 'Internal_Stores_Summary' : 'Client_Summary';
-                a.download = `${prefix}_${payload.msg_ref || 'PO'}.xlsx`;
+                a.download = filename;
                 document.body.appendChild(a);
                 a.click();
                 a.remove();
                 window.URL.revokeObjectURL(url);
             })
-            .catch(err => alert('Error downloading Excel file: ' + err.message));
+            .catch(err => alert('Error downloading Excel: ' + err.message));
         }
 
         function exportSupplierPDFs() {
