@@ -23,6 +23,11 @@ COMMON_ITEM_WORDS = {
     "INSULATING", "SWAGELOK", "NEEDLE", "TEE", "CAP", "CROSS", "BUSHING", "PLUG"
 }
 
+REMARK_PATTERN = re.compile(
+    r"\b(machined(?:\s+from)?|modified(?:\s+from)?|offered|made\s+from|fabricated(?:\s+from)?|locally)\b.*",
+    re.IGNORECASE
+)
+
 def strip_internal_product_code(description):
     """
     Strips internal product codes like LBL25300RF, LTO156KA350LF2, LUN256KNPTA105N,
@@ -175,20 +180,49 @@ def extract_pdf_data(pdf_path_or_file):
                             clean_line = re.sub(r"\b(pcs|ea|set|mtr|nos|pkg)\b", "", clean_line, flags=re.IGNORECASE).strip()
                         
                         if clean_line and not re.match(r"^\d{4,5}$", clean_line):
-                            current_item["description"] += " " + clean_line
+                            rem_m = REMARK_PATTERN.search(clean_line)
+                            if rem_m:
+                                remark_txt = rem_m.group(0).strip()
+                                if current_item["remarks"]:
+                                    current_item["remarks"] += "; " + remark_txt
+                                else:
+                                    current_item["remarks"] = remark_txt
+                                
+                                desc_part = REMARK_PATTERN.sub('', clean_line).rstrip(' -:,;')
+                                if desc_part:
+                                    current_item["description"] += " " + desc_part
+                            else:
+                                current_item["description"] += " " + clean_line
 
     if current_item:
         items.append(current_item)
 
     # Post-process items to strip product codes & auto-detect supplier
     for item in items:
+        raw_full = item["description"] + " " + item["remarks"]
+        
+        # Check if code or description contains STOCK
+        if re.search(r"[-_\s/]?STOCK\b", raw_full, re.IGNORECASE):
+            item["supplier_name"] = "STOCK"
+
+        # Check if description itself contains remark patterns
+        rem_match = REMARK_PATTERN.search(item["description"])
+        if rem_match:
+            remark_text = rem_match.group(0).strip()
+            cleaned_desc = REMARK_PATTERN.sub('', item["description"]).rstrip(' -:,;')
+            item["description"] = cleaned_desc
+            if item["remarks"]:
+                if remark_text.lower() not in item["remarks"].lower():
+                    item["remarks"] += "; " + remark_text
+            else:
+                item["remarks"] = remark_text
+
         # Strip internal product codes e.g. LBL25300RF, LTO156KA350LF2, LUN256KNPTA105N
         item["description"] = strip_internal_product_code(item["description"])
         
-        desc_rem = (item["description"] + " " + item["remarks"]).lower()
-        
-        # Master Supplier Auto-match
+        # Master Supplier Auto-match (if supplier_name is not already set)
         if not item["supplier_name"]:
+            desc_rem = (item["description"] + " " + item["remarks"]).lower()
             for supplier in MASTER_SUPPLIERS:
                 core_name = re.sub(r"\b(LLC|FZE|FZC|L\.L\.C|PTE|LTD|CO|INC|S\.P\.A|BV)\b", "", supplier, flags=re.IGNORECASE).strip()
                 if len(core_name) > 3 and core_name.lower() in desc_rem:

@@ -368,7 +368,7 @@
                     <div class="form-check form-switch mb-0">
                         <input class="form-check-input" type="checkbox" id="filterMachinedCheck" checked>
                         <label class="form-check-label fw-semibold text-dark" for="filterMachinedCheck">
-                            Export ONLY items containing <code>Machined From</code>, <code>Fabricated From</code>, <code>Made from</code>, <code>Modified from</code>, or <code>Locally</code> in remarks/description
+                            Export ONLY items containing <code>Machined From</code>, <code>Fabricated From</code>, <code>Made from</code>, <code>Modified from</code>, <code>Offered</code>, or <code>Locally</code> in remarks/description
                         </label>
                     </div>
                 </div>
@@ -677,7 +677,7 @@
             };
         }
 
-        const MANUFACTURING_KEYWORDS = ["machined", "fabricated", "made from", "modified", "locally"];
+        const MANUFACTURING_KEYWORDS = ["machined", "fabricated", "made from", "modified", "locally", "offered"];
         function isMeaningfulRemark(text) {
             if (!text) return false;
             const lower = text.toLowerCase();

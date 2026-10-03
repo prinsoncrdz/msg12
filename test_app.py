@@ -81,5 +81,26 @@ class SummaryAppTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.mimetype, 'application/zip')
 
+    def test_stock_supplier_and_offered_remark_parsing(self):
+        from pdf_parser import strip_internal_product_code, REMARK_PATTERN
+        from excel_generator import is_meaningful_item
+
+        # 1. Test code with STOCK
+        desc = "BL25150RFA105/A350LF2ST&H-STOCK FLANGE 2\", 150#, BLIND RF"
+        cleaned = strip_internal_product_code(desc)
+        self.assertEqual(cleaned, "FLANGE 2\", 150#, BLIND RF")
+
+        # 2. Test Offered remark matching
+        item_offered = {
+            "description": "UNION 1\", 6000#",
+            "remarks": "Offered 1/2\" NPT connection"
+        }
+        self.assertTrue(is_meaningful_item(item_offered))
+
+        # 3. Test remark pattern matching
+        m = REMARK_PATTERN.search("SPECTACLE BLIND 3/4\" - Offered 1/2\" NPT")
+        self.assertIsNotNone(m)
+        self.assertEqual(m.group(0), "Offered 1/2\" NPT")
+
 if __name__ == '__main__':
     unittest.main()
