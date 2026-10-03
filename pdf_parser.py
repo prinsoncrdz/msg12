@@ -28,6 +28,39 @@ REMARK_PATTERN = re.compile(
     re.IGNORECASE
 )
 
+MAKE_MAPPINGS = [
+    (r"OMSA[-_]?STOCK|OMSA", "OMSA GERMANY"),
+    (r"JD[-_]?STOCK|\bDELCORTE\b", "DELCORTE GERMANY"),
+    (r"W[-_]?STOCK|WMA?ASS", "WMASS GERMANY"),
+    (r"TK[-_]?STOCK", "TK KOREA"),
+    (r"ST&H(?:[-_]?STOCK)?|STH", "ST&H KOREA"),
+    (r"\bMFF\b|METALFAR", "Metalfar Italy"),
+    (r"BENKAN", "BENKAN THAILAND"),
+    (r"ULMA", "ULMA SPAIN"),
+    (r"MELESI", "MELESI ITALY"),
+]
+
+def auto_detect_make(raw_text):
+    """
+    Auto-detects manufacturer / MAKE name from raw item description or product code.
+    Mappings:
+      - MFF -> Metalfar Italy
+      - BENKAN -> BENKAN THAILAND
+      - ST&H / STH -> ST&H KOREA
+      - W-STOCK / WMAASS / WMASS -> WMASS GERMANY
+      - JD-STOCK / DELCORTE -> DELCORTE GERMANY
+      - OMSA-STOCK / OMSA -> OMSA GERMANY
+      - TK-STOCK -> TK KOREA
+      - ULMA -> ULMA SPAIN
+      - MELESI -> MELESI ITALY
+    """
+    if not raw_text:
+        return ""
+    for pattern, make_val in MAKE_MAPPINGS:
+        if re.search(pattern, raw_text, re.IGNORECASE):
+            return make_val
+    return ""
+
 def strip_leading_item_number(description, sl_no=None):
     """
     Strips leading item sequence numbers (e.g. '1 ', '2 ', '1. ', '01 ') from the beginning of descriptions,
@@ -218,6 +251,12 @@ def extract_pdf_data(pdf_path_or_file):
         item["description"] = strip_leading_item_number(item["description"], item["sl_no"])
 
         raw_full = item["description"] + " " + item["remarks"]
+
+        # Auto-detect MAKE from code / raw item description if empty
+        if not item["make"]:
+            detected_make = auto_detect_make(raw_full)
+            if detected_make:
+                item["make"] = detected_make
         
         # Check if code or description contains STOCK
         if re.search(r"[-_\s/]?STOCK\b", raw_full, re.IGNORECASE):

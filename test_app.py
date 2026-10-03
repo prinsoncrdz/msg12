@@ -82,7 +82,7 @@ class SummaryAppTestCase(unittest.TestCase):
         self.assertEqual(response.mimetype, 'application/zip')
 
     def test_stock_supplier_and_offered_remark_parsing(self):
-        from pdf_parser import strip_internal_product_code, strip_leading_item_number, REMARK_PATTERN
+        from pdf_parser import strip_internal_product_code, strip_leading_item_number, auto_detect_make, REMARK_PATTERN
         from excel_generator import is_meaningful_item
 
         # 1. Test code with STOCK
@@ -95,14 +95,25 @@ class SummaryAppTestCase(unittest.TestCase):
         self.assertEqual(strip_leading_item_number("2 ECC. RED. 8\" X 6\"", sl_no=2), "ECC. RED. 8\" X 6\"")
         self.assertEqual(strip_leading_item_number("1\" FLANGE 150#", sl_no=1), "1\" FLANGE 150#")
 
-        # 3. Test Offered remark matching
+        # 3. Test MAKE auto-detection mappings
+        self.assertEqual(auto_detect_make("FLANGE 2\" MFF A105N"), "Metalfar Italy")
+        self.assertEqual(auto_detect_make("TEE 3\" BENKAN A234 WPB"), "BENKAN THAILAND")
+        self.assertEqual(auto_detect_make("BL25150RFA105/A350LF2ST&H-STOCK"), "ST&H KOREA")
+        self.assertEqual(auto_detect_make("XEL90250S40SRWPB-W-STOCK"), "WMASS GERMANY")
+        self.assertEqual(auto_detect_make("EL90256KNPTA105JD-STOCK"), "DELCORTE GERMANY")
+        self.assertEqual(auto_detect_make("LTO156KA350LF2-OMSA-STOCK"), "OMSA GERMANY")
+        self.assertEqual(auto_detect_make("XEL90250S40SRWPB-TK-STOCK"), "TK KOREA")
+        self.assertEqual(auto_detect_make("SPECTACLE BLIND 3/4\" ULMA 300#"), "ULMA SPAIN")
+        self.assertEqual(auto_detect_make("FLANGE 6\" MELESI 300# BLIND"), "MELESI ITALY")
+
+        # 4. Test Offered remark matching
         item_offered = {
             "description": "UNION 1\", 6000#",
             "remarks": "Offered 1/2\" NPT connection"
         }
         self.assertTrue(is_meaningful_item(item_offered))
 
-        # 4. Test remark pattern matching
+        # 5. Test remark pattern matching
         m = REMARK_PATTERN.search("SPECTACLE BLIND 3/4\" - Offered 1/2\" NPT")
         self.assertIsNotNone(m)
         self.assertEqual(m.group(0), "Offered 1/2\" NPT")
