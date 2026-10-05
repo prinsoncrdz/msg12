@@ -840,55 +840,25 @@
                 const meta = bData.metadata || {};
                 const items = bData.items || [];
 
-                // Update metadata fields
-                document.getElementById('meta-date').value = meta.date || bData.date || '';
-                document.getElementById('meta-client').value = meta.to_client || bData.client || '';
-                document.getElementById('meta-po').value = meta.po_number || bData.po_number || '';
-                document.getElementById('meta-ref').value = meta.msg_ref || bData.msg_ref || '';
-                document.getElementById('meta-sig-name').value = meta.signatory_name || 'Pradeep Poojary';
-                document.getElementById('meta-sig-title').value = meta.signatory_title || '( QA / QC Dept )';
+                // Update metadata fields safely
+                if (document.getElementById('meta-date')) document.getElementById('meta-date').value = meta.date || bData.date || '';
+                if (document.getElementById('meta-client')) document.getElementById('meta-client').value = meta.to_client || bData.client || '';
+                if (document.getElementById('meta-po')) document.getElementById('meta-po').value = meta.po_number || bData.po_number || '';
+                if (document.getElementById('meta-ref')) document.getElementById('meta-ref').value = meta.msg_ref || bData.msg_ref || '';
+                if (document.getElementById('meta-sig-name')) document.getElementById('meta-sig-name').value = meta.signatory_name || 'Pradeep Poojary';
+                if (document.getElementById('meta-sig-title')) document.getElementById('meta-sig-title').value = meta.signatory_title || '( QA / QC Dept )';
                 
-                if (meta.action_type) {
+                if (meta.action_type && document.getElementById('meta-action-type')) {
                     document.getElementById('meta-action-type').value = meta.action_type;
                 }
 
                 // Update items in editor table
-                const tbody = document.getElementById('items-body');
-                tbody.innerHTML = '';
-                items.forEach((item, index) => {
-                    const row = document.createElement('tr');
-                    row.className = 'border-b border-slate-100 hover:bg-slate-50 text-xs text-slate-700';
-                    row.setAttribute('data-index', index);
-
-                    row.innerHTML = `
-                        <td class="px-2 py-2.5 font-medium text-slate-500 text-center">${item.sl_no || (index + 1)}</td>
-                        <td class="px-2 py-2.5">
-                            <textarea class="w-full text-xs p-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 custom-scrollbar focus:outline-none" rows="2" onchange="triggerAutoPreview()">${item.description || ''}</textarea>
-                        </td>
-                        <td class="px-2 py-2.5">
-                            <input type="text" class="w-full text-xs p-1 border border-slate-300 rounded text-center focus:ring-1 focus:ring-blue-500 focus:outline-none" value="${item.po_qty || ''}" onchange="triggerAutoPreview()">
-                        </td>
-                        <td class="px-2 py-2.5">
-                            <input type="text" class="w-full text-xs p-1 border border-slate-300 rounded text-center focus:ring-1 focus:ring-blue-500 focus:outline-none" value="${item.uom || ''}" onchange="triggerAutoPreview()">
-                        </td>
-                        <td class="px-2 py-2.5">
-                            <input type="text" class="w-full text-xs p-1 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500 focus:outline-none" value="${item.heat_number || ''}" onchange="triggerAutoPreview()">
-                        </td>
-                        <td class="px-2 py-2.5 bg-amber-50/40">
-                            <textarea class="w-full text-xs p-1.5 border border-amber-300 rounded focus:ring-1 focus:ring-amber-500 custom-scrollbar font-medium text-amber-950 focus:outline-none" rows="2" placeholder="e.g. MADE FROM PLATE THK. 25MM" onchange="handleRemarkChange(this)">${item.remarks || ''}</textarea>
-                        </td>
-                        <td class="px-2 py-2.5 text-center">
-                            <button onclick="removeRow(this)" class="text-slate-400 hover:text-red-600 p-1" title="Delete Item">
-                                <i class="fa-solid fa-trash-can"></i>
-                            </button>
-                        </td>
-                    `;
-                    tbody.appendChild(row);
-                });
+                currentItems = items || [];
+                renderItemsTable();
 
                 closeBackupsModal();
-                triggerAutoPreview();
-                alert(`Loaded summary sheet backup for PO: ${bData.po_number} into editor.`);
+                updatePreview();
+                alert(`Loaded summary sheet backup for PO: ${bData.po_number || meta.po_number || 'Document'} into editor.`);
             })
             .catch(err => {
                 alert('Failed to restore backup: ' + err.message);
