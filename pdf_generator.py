@@ -196,7 +196,7 @@ def apply_vector_letterhead_overlay(raw_pdf_bytes_or_path, output_target):
         output_target.write(final_bytes)
 
 
-def generate_loc_pdf(metadata, items, output_target, signature_data=None, stamp_data=None):
+def generate_loc_pdf(metadata, items, output_target, signature_data=None, stamp_data=None, include_signature=True, include_stamp=True):
     """
     Generates a Letter of Compliance (LOC) PDF based on exact MSG specifications.
     Uses vector letterhead overlay for 100% professional un-stretched output.
@@ -382,8 +382,13 @@ def generate_loc_pdf(metadata, items, output_target, signature_data=None, stamp_
     default_sig_path = os.path.join(script_dir, 'assets', 'signature.png')
     default_stamp_path = os.path.join(script_dir, 'assets', 'stamp.png')
 
-    sig_src = parse_image_data(signature_data) or (default_sig_path if os.path.exists(default_sig_path) else None)
-    stamp_src = parse_image_data(stamp_data) or (default_stamp_path if os.path.exists(default_stamp_path) else None)
+    sig_src = None
+    if include_signature:
+        sig_src = parse_image_data(signature_data) or (default_sig_path if os.path.exists(default_sig_path) else None)
+
+    stamp_src = None
+    if include_stamp:
+        stamp_src = parse_image_data(stamp_data) or (default_stamp_path if os.path.exists(default_stamp_path) else None)
 
     sig_elements = []
     sig_elements.append(Paragraph("<b>For MSG Oilfield Equipment Trading,</b>", sig_company_style))

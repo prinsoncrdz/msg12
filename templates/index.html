@@ -170,7 +170,7 @@
                     <!-- Custom Signature Upload -->
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1">
-                            <i class="fa-solid fa-signature text-blue-600 mr-1"></i>Custom Signature Image (Optional)
+                            <i class="fa-solid fa-signature text-blue-600 mr-1"></i>Custom Signature Image (Optional Override)
                         </label>
                         <div class="flex items-center space-x-2">
                             <input type="file" id="sig-file-input" accept="image/*" class="text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" onchange="handleSignatureUpload(this.files)">
@@ -181,11 +181,60 @@
                     <!-- Custom Stamp Upload -->
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1">
-                            <i class="fa-solid fa-stamp text-blue-600 mr-1"></i>Custom QA/QC Stamp Image (Optional)
+                            <i class="fa-solid fa-stamp text-blue-600 mr-1"></i>Custom QA/QC Stamp Image (Optional Override)
                         </label>
                         <div class="flex items-center space-x-2">
                             <input type="file" id="stamp-file-input" accept="image/*" class="text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" onchange="handleStampUpload(this.files)">
                             <button onclick="clearStamp()" id="btn-clear-stamp" class="hidden text-xs text-red-600 hover:text-red-800 font-medium">Clear</button>
+                        </div>
+                    </div>
+
+                    <!-- Official Seal & Signature Preferences Card (Matches UI Option Modal) -->
+                    <div class="sm:col-span-2 bg-slate-50 p-4 rounded-xl border border-slate-200 mt-2">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-bold text-slate-800 flex items-center space-x-2">
+                                <i class="fa-solid fa-sliders text-blue-600"></i>
+                                <span>Signature & QA/QC Seal Preferences</span>
+                            </span>
+                            <span class="text-[11px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                                <i class="fa-solid fa-cloud-check mr-1"></i>Official Cloudinary Assets Loaded
+                            </span>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <!-- Include Signature Toggle -->
+                            <div class="bg-white p-3 rounded-lg border border-slate-200 flex items-center justify-between shadow-sm">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
+                                        <i class="fa-solid fa-file-signature text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-xs font-bold text-slate-800">Include Signature</h4>
+                                        <p class="text-[10px] text-slate-500">Official Cloudinary Signature</p>
+                                    </div>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="chk-include-sig" checked class="sr-only peer" onchange="triggerAutoPreview()">
+                                    <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </div>
+
+                            <!-- Include Seal / QA Stamp Toggle -->
+                            <div class="bg-white p-3 rounded-lg border border-slate-200 flex items-center justify-between shadow-sm">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100">
+                                        <i class="fa-solid fa-stamp text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-xs font-bold text-slate-800">Include QA/QC Seal</h4>
+                                        <p class="text-[10px] text-slate-500">Official MSG Company Stamp</p>
+                                    </div>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="chk-include-stamp" checked class="sr-only peer" onchange="triggerAutoPreview()">
+                                    <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-600"></div>
+                                </label>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -565,6 +614,8 @@
         }
 
         function getPayload() {
+            const incSigElem = document.getElementById('chk-include-sig');
+            const incStampElem = document.getElementById('chk-include-stamp');
             return {
                 metadata: {
                     date: document.getElementById('meta-date').value,
@@ -578,7 +629,9 @@
                 items: currentItems,
                 filter_empty_remarks: document.getElementById('chk-filter-empty').checked,
                 signature_data: customSignatureData,
-                stamp_data: customStampData
+                stamp_data: customStampData,
+                include_signature: incSigElem ? incSigElem.checked : true,
+                include_stamp: incStampElem ? incStampElem.checked : true
             };
         }
 
