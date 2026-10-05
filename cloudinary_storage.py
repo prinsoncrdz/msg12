@@ -13,20 +13,32 @@ try:
 except ImportError:
     CLOUDINARY_AVAILABLE = False
 
-LOCAL_BACKUP_DIR = os.path.join(os.path.dirname(__file__), 'backups_store')
+import tempfile
+
+def _get_local_backup_dir():
+    """Returns a writable directory for temporary local caching (e.g. /tmp on Vercel/Linux)."""
+    tmp_dir = os.path.join(tempfile.gettempdir(), 'msg_loc_backups')
+    try:
+        os.makedirs(tmp_dir, exist_ok=True)
+        return tmp_dir
+    except Exception:
+        return tempfile.gettempdir()
 
 def _load_env_file():
     env_path = os.path.join(os.path.dirname(__file__), '.env')
     if os.path.exists(env_path):
-        with open(env_path, 'r', encoding='utf-8') as f:
-            for line in f:
-                line = line.strip()
-                if line and not line.startswith('#') and '=' in line:
-                    key, val = line.split('=', 1)
-                    key = key.strip()
-                    val = val.strip().strip('"').strip("'")
-                    if key not in os.environ:
-                        os.environ[key] = val
+        try:
+            with open(env_path, 'r', encoding='utf-8') as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith('#') and '=' in line:
+                        key, val = line.split('=', 1)
+                        key = key.strip()
+                        val = val.strip().strip('"').strip("'")
+                        if key not in os.environ:
+                            os.environ[key] = val
+        except Exception:
+            pass
 
 def is_cloudinary_configured():
     """Return True if Cloudinary environment variables are set and package is available."""
@@ -56,10 +68,6 @@ def is_cloudinary_configured():
             return False
     return False
 
-def _ensure_local_backup_dir():
-    if not os.path.exists(LOCAL_BACKUP_DIR):
-        os.makedirs(LOCAL_BACKUP_DIR, exist_ok=True)
-
 def _sanitize_filename(name):
     return re.sub(r'[^a-zA-Z0-9_\-]', '_', str(name or 'document'))
 
@@ -68,8 +76,6 @@ def save_summary_backup(metadata, items, user_email="info@msgoilfield.com", pdf_
     Saves a summary sheet backup to Cloudinary (if configured) and local backup store.
     Returns dictionary with backup info.
     """
-    _ensure_local_backup_dir()
-
     po_num = metadata.get('po_number', 'NO_PO').strip()
     client = metadata.get('to_client', 'Unknown_Client').strip()
     msg_ref = metadata.get('msg_ref', '').strip()
@@ -94,10 +100,14 @@ def save_summary_backup(metadata, items, user_email="info@msgoilfield.com", pdf_
         'pdf_b64': pdf_b64
     }
 
-    # 1. Save locally
-    local_path = os.path.join(LOCAL_BACKUP_DIR, f"{backup_id}.json")
-    with open(local_path, 'w', encoding='utf-8') as f:
-        json.dump(backup_data, f, indent=2)
+    # 1. Save locally (wrapped in try-except for read-only filesystem safety on Vercel)
+    try:
+        backup_dir = _get_local_backup_dir()
+        local_path = os.path.join(backup_dir, f"{backup_id}.json")
+        with open(local_path, 'w', encoding='utf-8') as f:
+            json.dump(backup_data, f, indent=2)
+    except Exception:
+        pass
 
     cloudinary_status = "not_configured"
     cloudinary_public_id = None
@@ -192,48 +202,51 @@ def search_summary_backups(query=""):
         except Exception:
             pass
 
-    # 2. Search local backup store
-    _ensure_local_backup_dir()
-    if os.path.exists(LOCAL_BACKUP_DIR):
-        for fname in os.listdir(LOCAL_BACKUP_DIR):
-            if fname.endswith('.json'):
-                fpath = os.path.join(LOCAL_BACKUP_DIR, fname)
-                try:
-                    with open(fpath, 'r', encoding='utf-8') as f:
-                        data = json.load(f)
-                    
-                    b_id = data.get('backup_id', fname.replace('.json', ''))
-                    if b_id in seen_ids:
+    # 2. Search local backup store (wrapped safely in try-except)
+    try:
+        local_dir = _get_local_backup_dir()
+        if os.path.exists(local_dir):
+            for fname in os.listdir(local_dir):
+                if fname.endswith('.json'):
+                    fpath = os.path.join(local_dir, fname)
+                    try:
+                        with open(fpath, 'r', encoding='utf-8') as f:
+                            data = json.load(f)
+                        
+                        b_id = data.get('backup_id', fname.replace('.json', ''))
+                        if b_id in seen_ids:
+                            continue
+
+                        po_num = data.get('po_number', '')
+                        client = data.get('client', '')
+                        msg_ref = data.get('msg_ref', '')
+                        date_str = data.get('date', '')
+                        saved_at = data.get('saved_at', '')
+                        items = data.get('items', [])
+
+                        items_text = " ".join([str(it.get('description', '')) + " " + str(it.get('remarks', '')) for it in items])
+
+                        match = True
+                        if query:
+                            searchable = f"{po_num} {client} {msg_ref} {date_str} {items_text} {b_id}".lower()
+                            match = query in searchable
+
+                        if match:
+                            results.append({
+                                'backup_id': b_id,
+                                'cloudinary_public_id': None,
+                                'po_number': po_num,
+                                'client': client,
+                                'msg_ref': msg_ref,
+                                'date': date_str,
+                                'saved_at': saved_at,
+                                'item_count': len(items),
+                                'source': 'local'
+                            })
+                    except Exception:
                         continue
-
-                    po_num = data.get('po_number', '')
-                    client = data.get('client', '')
-                    msg_ref = data.get('msg_ref', '')
-                    date_str = data.get('date', '')
-                    saved_at = data.get('saved_at', '')
-                    items = data.get('items', [])
-
-                    items_text = " ".join([str(it.get('description', '')) + " " + str(it.get('remarks', '')) for it in items])
-
-                    match = True
-                    if query:
-                        searchable = f"{po_num} {client} {msg_ref} {date_str} {items_text} {b_id}".lower()
-                        match = query in searchable
-
-                    if match:
-                        results.append({
-                            'backup_id': b_id,
-                            'cloudinary_public_id': None,
-                            'po_number': po_num,
-                            'client': client,
-                            'msg_ref': msg_ref,
-                            'date': date_str,
-                            'saved_at': saved_at,
-                            'item_count': len(items),
-                            'source': 'local'
-                        })
-                except Exception:
-                    continue
+    except Exception:
+        pass
 
     # Sort results by saved_at descending
     results.sort(key=lambda x: str(x.get('saved_at', '')), reverse=True)
@@ -243,15 +256,18 @@ def restore_summary_backup(backup_id):
     """
     Fetch raw JSON summary sheet backup data from Cloudinary or local backup store.
     """
-    # 1. Check local backup store first
-    _ensure_local_backup_dir()
-    local_path = os.path.join(LOCAL_BACKUP_DIR, f"{backup_id}.json")
-    if not local_path.endswith('.json'):
-        local_path += '.json'
+    # 1. Check local backup store first (safely wrapped)
+    try:
+        local_dir = _get_local_backup_dir()
+        local_path = os.path.join(local_dir, f"{backup_id}.json")
+        if not local_path.endswith('.json'):
+            local_path += '.json'
 
-    if os.path.exists(local_path):
-        with open(local_path, 'r', encoding='utf-8') as f:
-            return json.load(f)
+        if os.path.exists(local_path):
+            with open(local_path, 'r', encoding='utf-8') as f:
+                return json.load(f)
+    except Exception:
+        pass
 
     # 2. Try fetching from Cloudinary if configured
     if is_cloudinary_configured():
@@ -279,11 +295,14 @@ def delete_summary_backup(backup_id):
     deleted_local = False
     deleted_cloud = False
 
-    _ensure_local_backup_dir()
-    local_path = os.path.join(LOCAL_BACKUP_DIR, f"{backup_id}.json")
-    if os.path.exists(local_path):
-        os.remove(local_path)
-        deleted_local = True
+    try:
+        local_dir = _get_local_backup_dir()
+        local_path = os.path.join(local_dir, f"{backup_id}.json")
+        if os.path.exists(local_path):
+            os.remove(local_path)
+            deleted_local = True
+    except Exception:
+        pass
 
     if is_cloudinary_configured():
         try:
