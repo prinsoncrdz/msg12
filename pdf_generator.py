@@ -120,6 +120,55 @@ def parse_image_data(img_data_str_or_bytes):
     return img_data_str_or_bytes
 
 
+def remove_white_background(img_src, threshold=210):
+    """
+    Automatically detects and converts white/light background pixels to transparent alpha channels
+    so that seal stamps and signatures overlay cleanly onto PDFs with zero white box backgrounds.
+    """
+    if not img_src:
+        return None
+
+    try:
+        if isinstance(img_src, str):
+            if not os.path.exists(img_src):
+                return img_src
+            im = PILImage.open(img_src)
+        elif hasattr(img_src, 'seek'):
+            img_src.seek(0)
+            im = PILImage.open(img_src)
+        else:
+            im = PILImage.open(img_src)
+
+        im = im.convert("RGBA")
+
+        try:
+            import numpy as np
+            arr = np.array(im)
+            r, g, b, a = arr[:, :, 0], arr[:, :, 1], arr[:, :, 2], arr[:, :, 3]
+            light_mask = (r > threshold) & (g > threshold) & (b > threshold)
+            arr[:, :, 3][light_mask] = 0
+            clean_im = PILImage.fromarray(arr, mode="RGBA")
+        except Exception:
+            pixels = im.load()
+            w, h = im.size
+            for x in range(w):
+                for y in range(h):
+                    r, g, b, a = pixels[x, y]
+                    if r > threshold and g > threshold and b > threshold:
+                        pixels[x, y] = (255, 255, 255, 0)
+            clean_im = im
+
+        out = io.BytesIO()
+        clean_im.save(out, format="PNG")
+        out.seek(0)
+        return out
+    except Exception as e:
+        print("Automatic background removal notice:", e)
+        if hasattr(img_src, 'seek'):
+            img_src.seek(0)
+        return img_src
+
+
 def build_compliance_wording(action_type):
     """
     Builds dynamic verb and noun combinations for the compliance statement.
@@ -384,11 +433,15 @@ def generate_loc_pdf(metadata, items, output_target, signature_data=None, stamp_
 
     sig_src = None
     if include_signature:
-        sig_src = parse_image_data(signature_data) or (default_sig_path if os.path.exists(default_sig_path) else None)
+        sig_raw = parse_image_data(signature_data) or (default_sig_path if os.path.exists(default_sig_path) else None)
+        if sig_raw:
+            sig_src = remove_white_background(sig_raw, threshold=210)
 
     stamp_src = None
     if include_stamp:
-        stamp_src = parse_image_data(stamp_data) or (default_stamp_path if os.path.exists(default_stamp_path) else None)
+        stamp_raw = parse_image_data(stamp_data) or (default_stamp_path if os.path.exists(default_stamp_path) else None)
+        if stamp_raw:
+            stamp_src = remove_white_background(stamp_raw, threshold=210)
 
     sig_elements = []
     sig_elements.append(Paragraph("<b>For MSG Oilfield Equipment Trading,</b>", sig_company_style))
