@@ -9,7 +9,7 @@ def main():
         'to_client': 'REI Oil & Gas Process Services',
         'po_number': 'U-PO003447',
         'msg_ref': 'MSG-0926-2127',
-        'signatory_name': 'Pradeep Poojary',
+        'signatory_name': 'Vijay Dsouza',
         'signatory_title': '( QA / QC Dept )',
         'action_type': 'fabricated'
     }

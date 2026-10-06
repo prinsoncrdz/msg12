@@ -16,7 +16,7 @@ def parse_excel_summary(file_path_or_stream, include_all=False):
         "to_client": "",
         "po_number": "",
         "msg_ref": "",
-        "signatory_name": "Pradeep Poojary",
+        "signatory_name": "Vijay Dsouza",
         "signatory_title": "( QA / QC Dept )",
         "action_type": "fabricated"
     }

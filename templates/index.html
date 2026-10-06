@@ -160,7 +160,7 @@
 
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1">Signatory Name</label>
-                        <input type="text" id="meta-sig-name" class="w-full text-xs px-3 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none" value="Pradeep Poojary" onchange="triggerAutoPreview()">
+                        <input type="text" id="meta-sig-name" class="w-full text-xs px-3 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none" value="Vijay Dsouza" onchange="triggerAutoPreview()">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1">Signatory Title</label>
@@ -481,7 +481,7 @@
                 to_client: 'REI Oil & Gas Process Services',
                 po_number: 'U-PO003447',
                 msg_ref: 'MSG-0926-2127',
-                signatory_name: 'Pradeep Poojary',
+                signatory_name: 'Vijay Dsouza',
                 signatory_title: '( QA / QC Dept )',
                 action_type: 'fabricated'
             };
@@ -527,7 +527,7 @@
             document.getElementById('meta-client').value = metadata.to_client || '';
             document.getElementById('meta-po').value = metadata.po_number || '';
             document.getElementById('meta-ref').value = metadata.msg_ref || '';
-            document.getElementById('meta-sig-name').value = metadata.signatory_name || 'Pradeep Poojary';
+            document.getElementById('meta-sig-name').value = metadata.signatory_name || 'Vijay Dsouza';
             document.getElementById('meta-sig-title').value = metadata.signatory_title || '( QA / QC Dept )';
 
             if (metadata.action_type) {
@@ -931,7 +931,7 @@
                 if (document.getElementById('meta-client')) document.getElementById('meta-client').value = meta.to_client || bData.client || '';
                 if (document.getElementById('meta-po')) document.getElementById('meta-po').value = meta.po_number || bData.po_number || '';
                 if (document.getElementById('meta-ref')) document.getElementById('meta-ref').value = meta.msg_ref || bData.msg_ref || '';
-                if (document.getElementById('meta-sig-name')) document.getElementById('meta-sig-name').value = meta.signatory_name || 'Pradeep Poojary';
+                if (document.getElementById('meta-sig-name')) document.getElementById('meta-sig-name').value = meta.signatory_name || 'Vijay Dsouza';
                 if (document.getElementById('meta-sig-title')) document.getElementById('meta-sig-title').value = meta.signatory_title || '( QA / QC Dept )';
                 
                 if (meta.action_type && document.getElementById('meta-action-type')) {

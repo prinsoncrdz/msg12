@@ -39,7 +39,7 @@ class AppTestCase(unittest.TestCase):
                 'to_client': 'Test Client',
                 'po_number': 'PO-12345',
                 'msg_ref': 'MSG-REF-001',
-                'signatory_name': 'Pradeep Poojary',
+                'signatory_name': 'Vijay Dsouza',
                 'signatory_title': '( QA / QC Dept )',
                 'action_type': 'fabricated'
             },
@@ -79,7 +79,7 @@ class AppTestCase(unittest.TestCase):
                 'to_client': 'Cloud Backup Test Client',
                 'po_number': 'U-PO-CLOUD-999',
                 'msg_ref': 'MSG-REF-CLOUD',
-                'signatory_name': 'Pradeep Poojary',
+                'signatory_name': 'Vijay Dsouza',
                 'signatory_title': '( QA / QC Dept )',
                 'action_type': 'fabricated / machined'
             },

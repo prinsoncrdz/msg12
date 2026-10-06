@@ -172,7 +172,7 @@ def remove_white_background(img_src, threshold=210):
 def create_signature_seal_composite(stamp_src, sig_src, metadata=None):
     """
     Creates a combined Flowable PNG image containing both QA/QC Seal and Signature.
-    Allows Seal & Signature to overlap naturally right above 'Pradeep Poojary'
+    Allows Seal & Signature to overlap naturally right above 'Vijay Dsouza'
     with customizable size scale & position offsets (Adobe-style movable placement).
     """
     metadata = metadata or {}
@@ -190,7 +190,7 @@ def create_signature_seal_composite(stamp_src, sig_src, metadata=None):
     try:
         stamp_x = int(metadata.get('stamp_x', 0))
         stamp_y = int(metadata.get('stamp_y', 0))
-        sig_x = int(metadata.get('sig_x', 20)) # Overlaps directly above Pradeep Poojary on the left
+        sig_x = int(metadata.get('sig_x', 20)) # Overlaps directly above Vijay Dsouza on the left
         sig_y = int(metadata.get('sig_y', 10))
     except (ValueError, TypeError):
         stamp_x, stamp_y, sig_x, sig_y = 0, 0, 20, 10
@@ -539,7 +539,7 @@ def generate_loc_pdf(metadata, items, output_target, signature_data=None, stamp_
     else:
         sig_elements.append(Spacer(1, 35))
 
-    sig_name = metadata.get('signatory_name', 'Pradeep Poojary')
+    sig_name = metadata.get('signatory_name', 'Vijay Dsouza')
     sig_title = metadata.get('signatory_title', '( QA / QC Dept )')
 
     sig_elements.append(Paragraph(f"<b>{sig_name}</b>", sig_name_style))
