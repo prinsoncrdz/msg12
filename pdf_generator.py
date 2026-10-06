@@ -190,10 +190,10 @@ def create_signature_seal_composite(stamp_src, sig_src, metadata=None):
     try:
         stamp_x = int(metadata.get('stamp_x', 0))
         stamp_y = int(metadata.get('stamp_y', 0))
-        sig_x = int(metadata.get('sig_x', 30)) # Overlaps directly above Pradeep Poojary
+        sig_x = int(metadata.get('sig_x', 20)) # Overlaps directly above Pradeep Poojary on the left
         sig_y = int(metadata.get('sig_y', 10))
     except (ValueError, TypeError):
-        stamp_x, stamp_y, sig_x, sig_y = 0, 0, 30, 10
+        stamp_x, stamp_y, sig_x, sig_y = 0, 0, 20, 10
 
     st_w, st_h = 0, 0
     sg_w, sg_h = 0, 0
@@ -234,8 +234,8 @@ def create_signature_seal_composite(stamp_src, sig_src, metadata=None):
         except Exception as e:
             print("Signature composite loading error:", e)
 
-    max_w = max(stamp_x + st_w, sig_x + sg_w, 220) + 10
-    max_h = max(stamp_y + st_h, sig_y + sg_h, 85) + 10
+    max_w = max(stamp_x + st_w, sig_x + sg_w, 30) + 4
+    max_h = max(stamp_y + st_h, sig_y + sg_h, 30) + 4
 
     canvas = PILImage.new("RGBA", (max_w, max_h), (255, 255, 255, 0))
 
@@ -249,7 +249,7 @@ def create_signature_seal_composite(stamp_src, sig_src, metadata=None):
     canvas.save(out, format="PNG")
     out.seek(0)
     
-    return out, max_w * 0.68, max_h * 0.68
+    return out, max_w * 0.65, max_h * 0.65
 
 
 def build_compliance_wording(action_type):
@@ -532,7 +532,9 @@ def generate_loc_pdf(metadata, items, output_target, signature_data=None, stamp_
 
     if sig_src or stamp_src:
         composite_buf, comp_w, comp_h = create_signature_seal_composite(stamp_src, sig_src, metadata)
-        sig_elements.append(RLImage(composite_buf, width=comp_w, height=comp_h))
+        img_obj = RLImage(composite_buf, width=comp_w, height=comp_h)
+        img_obj.hAlign = 'LEFT'
+        sig_elements.append(img_obj)
         sig_elements.append(Spacer(1, 2))
     else:
         sig_elements.append(Spacer(1, 35))
