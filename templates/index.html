@@ -236,6 +236,55 @@
                                 </label>
                             </div>
                         </div>
+
+                        <!-- Movable Adobe-Style Sliders & Placement Controls -->
+                        <div class="mt-4 pt-3 border-t border-slate-200">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-[11px] font-bold text-slate-700 flex items-center space-x-1.5">
+                                    <i class="fa-solid fa-arrows-up-down-left-right text-blue-600"></i>
+                                    <span>Adobe-Style Movable Placement & Size Sliders</span>
+                                </span>
+                                <div class="flex items-center space-x-1">
+                                    <button type="button" onclick="applyPreset('overlap')" class="px-2 py-0.5 text-[10px] font-semibold bg-blue-100 text-blue-800 hover:bg-blue-200 rounded transition" title="Overlap Signature on Seal directly above name">🎯 Overlap</button>
+                                    <button type="button" onclick="applyPreset('side')" class="px-2 py-0.5 text-[10px] font-semibold bg-slate-200 text-slate-700 hover:bg-slate-300 rounded transition">📐 Side-by-Side</button>
+                                    <button type="button" onclick="applyPreset('above')" class="px-2 py-0.5 text-[10px] font-semibold bg-slate-200 text-slate-700 hover:bg-slate-300 rounded transition">🔝 Stacked</button>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                                <div>
+                                    <label class="flex justify-between text-[11px] font-semibold text-slate-600 mb-1">
+                                        <span>Seal Size (Prominent)</span>
+                                        <span id="lbl-stamp-scale" class="font-bold text-blue-600">140%</span>
+                                    </label>
+                                    <input type="range" id="slider-stamp-scale" min="0.15" max="0.45" step="0.01" value="0.28" class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600" oninput="document.getElementById('lbl-stamp-scale').innerText = Math.round(this.value * 500) + '%'; triggerAutoPreview()">
+                                </div>
+
+                                <div>
+                                    <label class="flex justify-between text-[11px] font-semibold text-slate-600 mb-1">
+                                        <span>Signature Size</span>
+                                        <span id="lbl-sig-scale" class="font-bold text-blue-600">125%</span>
+                                    </label>
+                                    <input type="range" id="slider-sig-scale" min="0.15" max="0.40" step="0.01" value="0.25" class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600" oninput="document.getElementById('lbl-sig-scale').innerText = Math.round(this.value * 500) + '%'; triggerAutoPreview()">
+                                </div>
+
+                                <div>
+                                    <label class="flex justify-between text-[11px] font-semibold text-slate-600 mb-1">
+                                        <span>Signature Overlap X (Shift Right/Left)</span>
+                                        <span id="lbl-sig-x" class="font-bold text-blue-600">35px</span>
+                                    </label>
+                                    <input type="range" id="slider-sig-x" min="0" max="140" step="2" value="35" class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600" oninput="document.getElementById('lbl-sig-x').innerText = this.value + 'px'; triggerAutoPreview()">
+                                </div>
+
+                                <div>
+                                    <label class="flex justify-between text-[11px] font-semibold text-slate-600 mb-1">
+                                        <span>Signature Height Y (Shift Up/Down)</span>
+                                        <span id="lbl-sig-y" class="font-bold text-blue-600">10px</span>
+                                    </label>
+                                    <input type="range" id="slider-sig-y" min="0" max="50" step="2" value="10" class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600" oninput="document.getElementById('lbl-sig-y').innerText = this.value + 'px'; triggerAutoPreview()">
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -613,6 +662,37 @@
             return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
         }
 
+        function applyPreset(type) {
+            const stampScale = document.getElementById('slider-stamp-scale');
+            const sigScale = document.getElementById('slider-sig-scale');
+            const sigX = document.getElementById('slider-sig-x');
+            const sigY = document.getElementById('slider-sig-y');
+
+            if (type === 'overlap') {
+                stampScale.value = 0.28;
+                sigScale.value = 0.25;
+                sigX.value = 35;
+                sigY.value = 10;
+            } else if (type === 'side') {
+                stampScale.value = 0.25;
+                sigScale.value = 0.22;
+                sigX.value = 95;
+                sigY.value = 10;
+            } else if (type === 'above') {
+                stampScale.value = 0.26;
+                sigScale.value = 0.24;
+                sigX.value = 10;
+                sigY.value = 0;
+            }
+
+            document.getElementById('lbl-stamp-scale').innerText = Math.round(stampScale.value * 500) + '%';
+            document.getElementById('lbl-sig-scale').innerText = Math.round(sigScale.value * 500) + '%';
+            document.getElementById('lbl-sig-x').innerText = sigX.value + 'px';
+            document.getElementById('lbl-sig-y').innerText = sigY.value + 'px';
+
+            triggerAutoPreview();
+        }
+
         function getPayload() {
             const incSigElem = document.getElementById('chk-include-sig');
             const incStampElem = document.getElementById('chk-include-stamp');
@@ -624,7 +704,13 @@
                     msg_ref: document.getElementById('meta-ref').value,
                     signatory_name: document.getElementById('meta-sig-name').value,
                     signatory_title: document.getElementById('meta-sig-title').value,
-                    action_type: document.getElementById('meta-action-type').value
+                    action_type: document.getElementById('meta-action-type').value,
+                    stamp_scale: document.getElementById('slider-stamp-scale') ? document.getElementById('slider-stamp-scale').value : 0.28,
+                    sig_scale: document.getElementById('slider-sig-scale') ? document.getElementById('slider-sig-scale').value : 0.25,
+                    stamp_x: 0,
+                    stamp_y: 0,
+                    sig_x: document.getElementById('slider-sig-x') ? document.getElementById('slider-sig-x').value : 35,
+                    sig_y: document.getElementById('slider-sig-y') ? document.getElementById('slider-sig-y').value : 10
                 },
                 items: currentItems,
                 filter_empty_remarks: document.getElementById('chk-filter-empty').checked,

@@ -169,6 +169,89 @@ def remove_white_background(img_src, threshold=210):
         return img_src
 
 
+def create_signature_seal_composite(stamp_src, sig_src, metadata=None):
+    """
+    Creates a combined Flowable PNG image containing both QA/QC Seal and Signature.
+    Allows Seal & Signature to overlap naturally right above 'Pradeep Poojary'
+    with customizable size scale & position offsets (Adobe-style movable placement).
+    """
+    metadata = metadata or {}
+
+    try:
+        stamp_scale = float(metadata.get('stamp_scale', 0.28))
+    except (ValueError, TypeError):
+        stamp_scale = 0.28
+
+    try:
+        sig_scale = float(metadata.get('sig_scale', 0.25))
+    except (ValueError, TypeError):
+        sig_scale = 0.25
+
+    try:
+        stamp_x = int(metadata.get('stamp_x', 0))
+        stamp_y = int(metadata.get('stamp_y', 0))
+        sig_x = int(metadata.get('sig_x', 30)) # Overlaps directly above Pradeep Poojary
+        sig_y = int(metadata.get('sig_y', 10))
+    except (ValueError, TypeError):
+        stamp_x, stamp_y, sig_x, sig_y = 0, 0, 30, 10
+
+    st_w, st_h = 0, 0
+    sg_w, sg_h = 0, 0
+
+    im_stamp = None
+    if stamp_src:
+        try:
+            if isinstance(stamp_src, str):
+                im_stamp = PILImage.open(stamp_src)
+            elif hasattr(stamp_src, 'seek'):
+                stamp_src.seek(0)
+                im_stamp = PILImage.open(stamp_src)
+            else:
+                im_stamp = PILImage.open(stamp_src)
+
+            im_stamp = im_stamp.convert("RGBA")
+            st_w = max(10, int(im_stamp.width * stamp_scale))
+            st_h = max(10, int(im_stamp.height * stamp_scale))
+            im_stamp = im_stamp.resize((st_w, st_h), PILImage.Resampling.LANCZOS)
+        except Exception as e:
+            print("Stamp composite loading error:", e)
+
+    im_sig = None
+    if sig_src:
+        try:
+            if isinstance(sig_src, str):
+                im_sig = PILImage.open(sig_src)
+            elif hasattr(sig_src, 'seek'):
+                sig_src.seek(0)
+                im_sig = PILImage.open(sig_src)
+            else:
+                im_sig = PILImage.open(sig_src)
+
+            im_sig = im_sig.convert("RGBA")
+            sg_w = max(10, int(im_sig.width * sig_scale))
+            sg_h = max(10, int(im_sig.height * sig_scale))
+            im_sig = im_sig.resize((sg_w, sg_h), PILImage.Resampling.LANCZOS)
+        except Exception as e:
+            print("Signature composite loading error:", e)
+
+    max_w = max(stamp_x + st_w, sig_x + sg_w, 220) + 10
+    max_h = max(stamp_y + st_h, sig_y + sg_h, 85) + 10
+
+    canvas = PILImage.new("RGBA", (max_w, max_h), (255, 255, 255, 0))
+
+    if im_stamp:
+        canvas.paste(im_stamp, (max(0, stamp_x), max(0, stamp_y)), im_stamp)
+
+    if im_sig:
+        canvas.paste(im_sig, (max(0, sig_x), max(0, sig_y)), im_sig)
+
+    out = io.BytesIO()
+    canvas.save(out, format="PNG")
+    out.seek(0)
+    
+    return out, max_w * 0.68, max_h * 0.68
+
+
 def build_compliance_wording(action_type):
     """
     Builds dynamic verb and noun combinations for the compliance statement.
@@ -448,34 +531,9 @@ def generate_loc_pdf(metadata, items, output_target, signature_data=None, stamp_
     sig_elements.append(Spacer(1, 6))
 
     if sig_src or stamp_src:
-        sig_cells = []
-        if sig_src:
-            sw, sh = get_image_dimensions(sig_src, 110, 45)
-            if isinstance(sig_src, io.BytesIO):
-                sig_src.seek(0)
-            sig_cells.append(RLImage(sig_src, width=sw, height=sh))
-        else:
-            sig_cells.append(Paragraph("", body_style))
-
-        if stamp_src:
-            stw, sth = get_image_dimensions(stamp_src, 90, 55)
-            if isinstance(stamp_src, io.BytesIO):
-                stamp_src.seek(0)
-            sig_cells.append(RLImage(stamp_src, width=stw, height=sth))
-        else:
-            sig_cells.append(Paragraph("", body_style))
-
-        graphics_table = Table([sig_cells], colWidths=[120, 120])
-        graphics_table.setStyle(TableStyle([
-            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-            ('ALIGN', (0,0), (-1,-1), 'LEFT'),
-            ('LEFTPADDING', (0,0), (-1,-1), 0),
-            ('RIGHTPADDING', (0,0), (-1,-1), 0),
-            ('TOPPADDING', (0,0), (-1,-1), 0),
-            ('BOTTOMPADDING', (0,0), (-1,-1), 0),
-        ]))
-        sig_elements.append(graphics_table)
-        sig_elements.append(Spacer(1, 4))
+        composite_buf, comp_w, comp_h = create_signature_seal_composite(stamp_src, sig_src, metadata)
+        sig_elements.append(RLImage(composite_buf, width=comp_w, height=comp_h))
+        sig_elements.append(Spacer(1, 2))
     else:
         sig_elements.append(Spacer(1, 35))
 
