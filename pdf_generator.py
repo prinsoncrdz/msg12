@@ -1,7 +1,20 @@
 import os
 import io
 import base64
+import html
 import fitz # PyMuPDF
+
+
+def format_paragraph_text(val):
+    if val is None:
+        return ""
+    val_str = str(val)
+    if not val_str.strip():
+        return ""
+    val_str = val_str.replace('\r\n', '\n').replace('\r', '\n')
+    escaped = html.escape(val_str)
+    return escaped.replace('\n', '<br/>')
+
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.lib.units import mm
@@ -487,12 +500,12 @@ def generate_loc_pdf(metadata, items, output_target, signature_data=None, stamp_
 
     for item in items:
         table_data.append([
-            Paragraph(str(item.get('sl_no', '')), tbl_cell_center),
-            Paragraph(str(item.get('description', '')), tbl_cell_left),
-            Paragraph(str(item.get('po_qty', '')), tbl_cell_center),
-            Paragraph(str(item.get('uom', '')), tbl_cell_center),
-            Paragraph(str(item.get('heat_number', '')), tbl_cell_center),
-            Paragraph(str(item.get('remarks', '')), tbl_cell_left)
+            Paragraph(format_paragraph_text(item.get('sl_no', '')), tbl_cell_center),
+            Paragraph(format_paragraph_text(item.get('description', '')), tbl_cell_left),
+            Paragraph(format_paragraph_text(item.get('po_qty', '')), tbl_cell_center),
+            Paragraph(format_paragraph_text(item.get('uom', '')), tbl_cell_center),
+            Paragraph(format_paragraph_text(item.get('heat_number', '')), tbl_cell_center),
+            Paragraph(format_paragraph_text(item.get('remarks', '')), tbl_cell_left)
         ])
 
     items_table = Table(table_data, colWidths=col_w, repeatRows=1)
